@@ -32,5 +32,5 @@ class getter:
 
     def API4(self,a):
         url = "https://api3.4n0a.cn/jsapi.php?"
-        r = json.loads(requests.get(url+"q="+a['q']+"&token="+a['token']).text)
+        r = json.loads(requests.get(url+"q="+parse.quote(a['q'])+"&token="+a['token']).text)
         return r['da']

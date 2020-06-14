@@ -2,17 +2,22 @@ import pyperclip
 import requests
 import json
 from urllib import parse
+
+from PIL import ImageGrab
+from aip import AipOcr
 import getter
 from win32api import MessageBox
 from win32con import MB_OK
 import time
+import re
+
 
 __header = {
     'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
     'Authorization': ""
 }
 
-__token = ""
+__token = "3d0da4a49407f37445a667768ff8f4ab"
 
 
 def Output(message):
@@ -39,10 +44,50 @@ def findAnswer(a):
     time.sleep(5)
 
 
+def textProcess(text):
+    tmpS = text
+    tmpS = tmpS.strip()
+    tmpS = tmpS.replace(" ", '')
+    tmpS = tmpS.replace("\n", '')
+    tmpS = tmpS.replace("\t", '')
+    tmpS = tmpS.replace("\r", '')
+    tmpS = tmpS.replace("\xa0", '')
+    tmpS = tmpS.replace("\x20", '')
+    tmpS = tmpS.replace("。", '')
+    tmpS = tmpS.replace(".", '')
+    tmpS = tmpS.replace("(", '')
+    tmpS = tmpS.replace(")", '')
+    tmpS = tmpS.replace("\u3000", '')
+    return tmpS
+
+
 last_string = pyperclip.paste()
+APP_ID = '19124804'
+API_KEY = 'cCMaB793Gff1w6yE9HojaE4z'
+SECRET_KEY = 'PMMOEcom53RHgXpwXfoHObilbf4V3oQe'
+# 初始化AipOcr
+aipOcr = AipOcr(APP_ID, API_KEY, SECRET_KEY)
 while True:
-    time.sleep(0.1)
-    string = pyperclip.paste()
-    if string != last_string and string != '':
-        last_string = string
-        findAnswer(last_string)
+    time.sleep(1)
+    #last_string = string
+    img1 = ImageGrab.grabclipboard()
+    # print(type(img))
+    # 文件保存的名字
+    img_path = '1.png'
+    # 保存图片
+    img1.save(img_path)
+    # 百度api执行所需数据，运行需换成自己的APP_ID，API_KEY，SECRET_KEY
+
+    with open(img_path, 'rb') as f:
+        img2 = f.read()
+        f.close()
+    # print(type(img2))
+    # 识别图片并返回结果
+    result = aipOcr.basicAccurate(img2)
+
+    data = ''
+    for r in result['words_result']:
+        data = data + r['words'] + '\n'
+    tmpS = textProcess(data)
+    Output(tmpS)
+    findAnswer(tmpS)
