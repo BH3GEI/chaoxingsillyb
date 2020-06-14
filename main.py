@@ -27,6 +27,32 @@ def Output(message):
 
 # clip = pyperclip.paste()
 
+def getDataOCR(aipOcr):
+    img1 = ImageGrab.grabclipboard()
+    # print(type(img))
+    # 文件保存的名字
+    img_path = '1.png'
+    # 保存图片
+    img1.save(img_path)
+    # 百度api执行所需数据，运行需换成自己的APP_ID，API_KEY，SECRET_KEY
+
+    with open(img_path, 'rb') as f:
+        img2 = f.read()
+        f.close()
+    # print(type(img2))
+    # 识别图片并返回结果
+    result = aipOcr.basicAccurate(img2)
+
+    data = ''
+    for r in result['words_result']:
+        data = data + r['words'] + '\n'
+    return data
+
+def getDataPaste(last):
+    tmp = pyperclip.paste()
+    if tmp == last:
+        return ""
+    return tmp
 
 def findAnswer(a):
     courseid = "206267220"
@@ -53,10 +79,6 @@ def textProcess(text):
     tmpS = tmpS.replace("\r", '')
     tmpS = tmpS.replace("\xa0", '')
     tmpS = tmpS.replace("\x20", '')
-    tmpS = tmpS.replace("。", '')
-    tmpS = tmpS.replace(".", '')
-    tmpS = tmpS.replace("(", '')
-    tmpS = tmpS.replace(")", '')
     tmpS = tmpS.replace("\u3000", '')
     return tmpS
 
@@ -67,27 +89,16 @@ API_KEY = 'cCMaB793Gff1w6yE9HojaE4z'
 SECRET_KEY = 'PMMOEcom53RHgXpwXfoHObilbf4V3oQe'
 # 初始化AipOcr
 aipOcr = AipOcr(APP_ID, API_KEY, SECRET_KEY)
+tmp = ""
+baiduAPI = False
 while True:
     time.sleep(1)
-    #last_string = string
-    img1 = ImageGrab.grabclipboard()
-    # print(type(img))
-    # 文件保存的名字
-    img_path = '1.png'
-    # 保存图片
-    img1.save(img_path)
-    # 百度api执行所需数据，运行需换成自己的APP_ID，API_KEY，SECRET_KEY
-
-    with open(img_path, 'rb') as f:
-        img2 = f.read()
-        f.close()
-    # print(type(img2))
-    # 识别图片并返回结果
-    result = aipOcr.basicAccurate(img2)
-
-    data = ''
-    for r in result['words_result']:
-        data = data + r['words'] + '\n'
-    tmpS = textProcess(data)
+    if baiduAPI:
+        tmp = getDataOCR(aipOcr)
+    else:
+        tmp = getDataPaste(tmp)
+        if tmp == "":
+            continue
+    tmpS = textProcess(tmp)
     Output(tmpS)
     findAnswer(tmpS)
