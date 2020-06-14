@@ -1,14 +1,10 @@
 import pyperclip
 import requests
 import json
-import execjs
-import js2py
 from urllib import parse
-import numpy
 import getter
 from win32api import MessageBox
 from win32con import MB_OK
-import os
 import time
 
 __header = {
