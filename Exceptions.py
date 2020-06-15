@@ -1,0 +1,2 @@
+class ClipNotIMG(BaseException):
+    pass

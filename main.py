@@ -2,7 +2,8 @@ import pyperclip
 import requests
 import json
 from urllib import parse
-
+import Exceptions
+from selenium import webdriver
 from PIL import ImageGrab
 from aip import AipOcr
 import getter
@@ -29,6 +30,8 @@ def Output(message):
 
 def getDataOCR(aipOcr):
     img1 = ImageGrab.grabclipboard()
+    if img1 is None:
+        raise Exceptions.ClipNotIMG("剪切板不是图片")
     # print(type(img))
     # 文件保存的名字
     img_path = '1.png'
@@ -54,6 +57,12 @@ def getDataPaste(last):
         return ""
     return tmp
 
+def getFromBaidu(question):
+    b = webdriver.Chrome()
+    b.get("https://www.baidu.com/s?wd=" + tmp)
+    b.find_element_by_id("kw").send_keys(question)
+    b.find_element_by_id("su").click()
+
 def findAnswer(a):
     courseid = "206267220"
     g = getter.getter()
@@ -61,13 +70,12 @@ def findAnswer(a):
     j = ['I', 'II', 'III', 'IV']
     h = 0
     for i in g.get({'q': a, 'curs': courseid, 'type': "1", 'token': __token}):
-        str += j[h] + ". : " + i + "\n"
+        str += j[h] + ". : " +"\n"+ i + "\n"
         str += '-' * 20
         str += "\n"
         h += 1
     Output(str)
     str = ""
-    time.sleep(5)
 
 
 def textProcess(text):
@@ -90,11 +98,17 @@ SECRET_KEY = 'PMMOEcom53RHgXpwXfoHObilbf4V3oQe'
 # 初始化AipOcr
 aipOcr = AipOcr(APP_ID, API_KEY, SECRET_KEY)
 tmp = ""
-baiduAPI = False
+baiduAPI = True
+
 while True:
-    time.sleep(1)
     if baiduAPI:
-        tmp = getDataOCR(aipOcr)
+        try:
+            tmp = getDataOCR(aipOcr)
+        except Exceptions.ClipNotIMG:
+            tmp = getDataPaste("")
+        except:
+
+            continue
     else:
         tmp = getDataPaste(tmp)
         if tmp == "":
