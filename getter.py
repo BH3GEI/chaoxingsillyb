@@ -1,6 +1,7 @@
 import requests
 from urllib import parse
 import json
+import Exceptions
 
 
 class getter:
@@ -10,6 +11,8 @@ class getter:
         result = []
         for i in self.__list:
             result.append(eval("self." + i)(arg))
+            if True: # To do List: 判断API返回无答案内容
+                raise Exceptions.NoAnswerFound
         return result
 
     def API1(self, a):

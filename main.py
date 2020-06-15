@@ -69,11 +69,14 @@ def findAnswer(a):
     str = ""
     j = ['I', 'II', 'III', 'IV']
     h = 0
-    for i in g.get({'q': a, 'curs': courseid, 'type': "1", 'token': __token}):
-        str += j[h] + ". : " +"\n"+ i + "\n"
-        str += '-' * 20
-        str += "\n"
-        h += 1
+    try:
+        for i in g.get({'q': a, 'curs': courseid, 'type': "1", 'token': __token}):
+            str += j[h] + ". : " +"\n"+ i + "\n"
+            str += '-' * 20
+            str += "\n"
+            h += 1
+    except Exceptions.NoAnswerFound:
+        getFromBaidu(a)
     Output(str)
     str = ""
 
@@ -107,7 +110,6 @@ while True:
         except Exceptions.ClipNotIMG:
             tmp = getDataPaste("")
         except:
-
             continue
     else:
         tmp = getDataPaste(tmp)
