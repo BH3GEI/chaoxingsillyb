@@ -11,6 +11,9 @@ from win32api import MessageBox
 from win32con import MB_OK
 import time
 import re
+import configparser
+import _thread
+import threading
 
 
 __header = {
@@ -63,7 +66,7 @@ def getFromBaidu(question):
     b.find_element_by_id("kw").send_keys(question)
     b.find_element_by_id("su").click()
 
-def findAnswer(a):
+def findAnswer(a, th):
     courseid = "206267220"
     g = getter.getter()
     str = ""
@@ -86,7 +89,20 @@ def findAnswer(a):
             str += '-' * 20
             str += "\n"
             h += 1
-    Output(str)
+    Output(th+str)
+
+def theardSearch(cfg, start, end, th):
+    loop = 1
+    for i in cfg.sections():
+        if loop - start < 0:
+            loop += 1
+            continue
+        if loop > end:
+            break
+        print(cfg.get(i, "tm"))
+        findAnswer(cfg.get(i, "tm"),th)
+
+        loop += 1
 
 
 def textProcess(text):
@@ -101,7 +117,39 @@ def textProcess(text):
     tmpS = tmpS.replace("\u3000", '')
     return tmpS
 
+# 初始化题目文件
+cfg1 = configparser.ConfigParser()
+cfg1.read("question.ini",encoding="utf-8")
 
+num = int((cfg1.sections().__len__() - int(cfg1.sections().__len__() % 8))/8)
+start = time.time()
+th1 = threading.Thread(target=theardSearch,args=(cfg1,1,num,"th1:"))
+th2 = threading.Thread(target=theardSearch,args=(cfg1,num+1,num*2,"th2:"))
+th3 = threading.Thread(target=theardSearch,args=(cfg1,num*2+1,num*3,"th3:"))
+th4 = threading.Thread(target=theardSearch,args=(cfg1,num*3+1,num*4,"th4:"))
+th5 = threading.Thread(target=theardSearch,args=(cfg1,num*4+1,num*5,"th5:"))
+th6 = threading.Thread(target=theardSearch,args=(cfg1,num*5+1,num*6,"th6:"))
+th7 = threading.Thread(target=theardSearch,args=(cfg1,num*6+1,num*7,"th7:"))
+th8 = threading.Thread(target=theardSearch,args=(cfg1,num*7+1,int(cfg1.sections().__len__()),"th8:"))
+th1.start()
+th2.start()
+th3.start()
+th4.start()
+th5.start()
+th6.start()
+th7.start()
+th8.start()
+th1.join()
+th2.join()
+th3.join()
+th4.join()
+th5.join()
+th6.join()
+th7.join()
+th8.join()
+end = time.time()
+print(end-start)
+quit()
 last_string = pyperclip.paste()
 APP_ID = '19124804'
 API_KEY = 'cCMaB793Gff1w6yE9HojaE4z'

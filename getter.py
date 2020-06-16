@@ -29,7 +29,7 @@ class getter:
         return result
 
     def API1(self, a):
-        url = "http://qs.nnarea.xcn/chaoxing_war/topicServlet?action=query&q="
+        url = "http://qs.nnarea.cn/chaoxing_war/topicServlet?action=query&q="
         r = {'answer':"",'status':False}
         for i in range(0, 4):
             tmp = json.loads(requests.post(url + parse.quote(a['q']), 'course=' + parse.quote(a['curs']) + '&type=' + str(i)).text)
@@ -42,7 +42,7 @@ class getter:
         url = "http://cx.icodef.com/wyn-nb"
         r = {'answer':"",'status':False}
         for i in range(0, 4):
-            tmp = requests.post(url, "q=" + parse.quote(a['q']) + '&type=' + str(i)).text
+            tmp = requests.post(url, "question=" + parse.quote(a['q']) + '&type=' + str(i)).text
             if tmp != "题目不能为nil":
                 r['status'] = True
                 r['answer'] += tmp + "\n"
