@@ -15,16 +15,22 @@ import configparser
 import _thread
 import threading
 
-
 __header = {
     'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
     'Authorization': ""
 }
 
 __token = "3d0da4a49407f37445a667768ff8f4ab"
+__questionList = []
+searched = 1
+tasks = 0
 
 
-def Output(message):
+def save(dicto):
+    __questionList.append(dicto)
+
+
+def push(message):
     # MessageBox(0, message, "答案", MB_OK)
     print(message)
 
@@ -54,102 +60,139 @@ def getDataOCR(aipOcr):
         data = data + r['words'] + '\n'
     return data
 
+
 def getDataPaste(last):
     tmp = pyperclip.paste()
     if tmp == last:
         return ""
     return tmp
 
+
 def getFromBaidu(question):
     b = webdriver.Chrome()
-    b.get("https://www.baidu.com/s?wd=" + tmp)
-    b.find_element_by_id("kw").send_keys(question)
-    b.find_element_by_id("su").click()
+    b.get("https://www.baidu.com/s?wd=" + parse.quote(question))
+    # b.find_element_by_id("kw").send_keys(question)
+    # b.find_element_by_id("su").click()
 
-def findAnswer(a, th):
+
+def findAnswer(a, times):
+    if times == 4:
+        raise Exceptions.NoAnswerFound
     courseid = "206267220"
     g = getter.getter()
     str = ""
     j = ['I', 'II', 'III', 'IV']
     h = 0
     try:
-        tmp = g.get({'q': a, 'curs': courseid, 'type': "1", 'token': __token})
+        tmp = g.get({'q': a['question'], 'curs': courseid, 'type': "1", 'token': __token})
     except Exceptions.NoAnswerFound:
-        # To Do List
-        # 递归 findAnswer(a,times)
-        # 削减文字内容重新查找
-        getFromBaidu(a)
+        try:
+            r = findAnswer(a, times+1)
+        except:
+            getFromBaidu(a['question'])
+        else:
+            return r
     except ConnectionError:
         return "连接出错"
     else:
         for i in tmp:
             if i['answer'] == "":
                 continue
-            str += j[h] + ". : " + "\n" + i['answer'] + "\n"
+            str += j[h] + ". : " + "\1" + i['answer'] + "\1"
             str += '-' * 20
-            str += "\n"
+            str += "\1"
             h += 1
-    Output(th+str)
+        save({'no': a['no'], 'question': a['question'], 'answer': str})
 
-def theardSearch(cfg, start, end, th):
+
+def threadSearch(cf, st, en):
     loop = 1
-    for i in cfg.sections():
-        if loop - start < 0:
+    global searched
+    for i in cf.sections():
+        if loop < st:
             loop += 1
             continue
-        if loop > end:
+        if loop >= en:
             break
-        print(cfg.get(i, "tm"))
-        findAnswer(cfg.get(i, "tm"),th)
-
+        print("查找中...第%d/%d题 : " % (searched, tasks) + cf.get(i, "question"))
+        searched += 1
+        findAnswer({'no': i, 'question': cf.get(i, "question")},0)
+        cf.remove_section(i)
         loop += 1
 
 
-def textProcess(text):
-    tmpS = text
-    tmpS = tmpS.strip()
-    tmpS = tmpS.replace(" ", '')
-    tmpS = tmpS.replace("\n", '')
-    tmpS = tmpS.replace("\t", '')
-    tmpS = tmpS.replace("\r", '')
-    tmpS = tmpS.replace("\xa0", '')
-    tmpS = tmpS.replace("\x20", '')
-    tmpS = tmpS.replace("\u3000", '')
-    return tmpS
+def textProcess(text, times):
+    targetText = text
+    if times == 0:
+        targetText = targetText.strip()
+        targetText = targetText.replace(" ", '')
+        targetText = targetText.replace("\n", '')
+        targetText = targetText.replace("\t", '')
+        targetText = targetText.replace("\r", '')
+        targetText = targetText.replace("\xa0", '')
+        targetText = targetText.replace("\x20", '')
+        targetText = targetText.replace("\u3000", '')
+        targetText = targetText.replace("1、", " ")
+        targetText = targetText.replace("2、", " ")
+        targetText = targetText.replace("3、", " ")
+        targetText = targetText.lstrip()
+        targetText = targetText.rstrip()
+    elif times == 1:
+        targetText = targetText.replace("（", ")")
+        targetText = targetText.replace("）", ")")
+        targetText = targetText.replace("，", ",")
+        targetText = targetText.replace("。", " ")
+    elif times == 2:
+        targetText = targetText.replace("(", "（")
+        targetText = targetText.replace(")", "）")
+        targetText = targetText.replace(",", "，")
+    else:
+        pattern = r'，|,|。|;|：|:|;'
+        str1, str2, str3, str4, str5 = re.split(pattern, targetText)
+        targetText = str1
+    return targetText
 
-# 初始化题目文件
-cfg1 = configparser.ConfigParser()
-cfg1.read("question.ini",encoding="utf-8")
 
-num = int((cfg1.sections().__len__() - int(cfg1.sections().__len__() % 8))/8)
-start = time.time()
-th1 = threading.Thread(target=theardSearch,args=(cfg1,1,num,"th1:"))
-th2 = threading.Thread(target=theardSearch,args=(cfg1,num+1,num*2,"th2:"))
-th3 = threading.Thread(target=theardSearch,args=(cfg1,num*2+1,num*3,"th3:"))
-th4 = threading.Thread(target=theardSearch,args=(cfg1,num*3+1,num*4,"th4:"))
-th5 = threading.Thread(target=theardSearch,args=(cfg1,num*4+1,num*5,"th5:"))
-th6 = threading.Thread(target=theardSearch,args=(cfg1,num*5+1,num*6,"th6:"))
-th7 = threading.Thread(target=theardSearch,args=(cfg1,num*6+1,num*7,"th7:"))
-th8 = threading.Thread(target=theardSearch,args=(cfg1,num*7+1,int(cfg1.sections().__len__()),"th8:"))
-th1.start()
-th2.start()
-th3.start()
-th4.start()
-th5.start()
-th6.start()
-th7.start()
-th8.start()
-th1.join()
-th2.join()
-th3.join()
-th4.join()
-th5.join()
-th6.join()
-th7.join()
-th8.join()
-end = time.time()
-print(end-start)
-quit()
+def startSearch():
+    # 初始化题目文件
+    global __questionList
+    cfg = configparser.ConfigParser()
+    cfg.read("questions.ini", encoding="utf-8")
+    threadNum = 6
+    searched = 1
+    tasks = int(cfg.sections().__len__())
+
+    t = []
+    for i in range(0, threadNum):
+        maxRange = tasks * (i + 1) / threadNum + 1
+        minRange = tasks * i / threadNum + 1
+        t.append(threading.Thread(target=threadSearch, args=(cfg, minRange, maxRange)))
+        t[i].start()
+
+    for i in t:
+        i.join()
+
+    with open("questions.ini", "w+") as f:
+        cfg.write(f)
+        f.close()
+    del cfg
+    cfg = configparser.ConfigParser()
+    for i in __questionList:
+        cfg.add_section(i['no'])
+        cfg.set(i['no'], "question", i['question'])
+        cfg.set(i['no'], "answer", i['answer'])
+
+    with open("answers.ini", "w", encoding="utf-8") as f:
+        cfg.write(f)
+        f.close()
+    del cfg
+    cfg = configparser.ConfigParser()
+    cfg.read("answers.ini", encoding="utf-8")
+    for i in cfg.sections():
+        print(i + ":" + cfg.get(i, "answer"))
+    __questionList = []
+
+
 last_string = pyperclip.paste()
 APP_ID = '19124804'
 API_KEY = 'cCMaB793Gff1w6yE9HojaE4z'
@@ -172,5 +215,4 @@ while True:
         if tmp == "":
             continue
     tmpS = textProcess(tmp)
-    Output(tmpS)
-    findAnswer(tmpS)
+    startSearch()
