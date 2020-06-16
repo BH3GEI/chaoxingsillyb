@@ -71,7 +71,7 @@ def findAnswer(a):
     h = 0
     try:
         for i in g.get({'q': a, 'curs': courseid, 'type': "1", 'token': __token}):
-            str += j[h] + ". : " +"\n"+ i + "\n"
+            str += j[h] + ". : " +"\n"+ i['answer'] + "\n"
             str += '-' * 20
             str += "\n"
             h += 1
