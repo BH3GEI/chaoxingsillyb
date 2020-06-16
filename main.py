@@ -70,15 +70,23 @@ def findAnswer(a):
     j = ['I', 'II', 'III', 'IV']
     h = 0
     try:
-        for i in g.get({'q': a, 'curs': courseid, 'type': "1", 'token': __token}):
-            str += j[h] + ". : " +"\n"+ i['answer'] + "\n"
+        tmp = g.get({'q': a, 'curs': courseid, 'type': "1", 'token': __token})
+    except Exceptions.NoAnswerFound:
+        # To Do List
+        # 递归 findAnswer(a,times)
+        # 削减文字内容重新查找
+        getFromBaidu(a)
+    except ConnectionError:
+        return "连接出错"
+    else:
+        for i in tmp:
+            if i['answer'] == "":
+                continue
+            str += j[h] + ". : " + "\n" + i['answer'] + "\n"
             str += '-' * 20
             str += "\n"
             h += 1
-    except Exceptions.NoAnswerFound:
-        getFromBaidu(a)
     Output(str)
-    str = ""
 
 
 def textProcess(text):

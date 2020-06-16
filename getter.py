@@ -10,18 +10,26 @@ class getter:
     def get(self, arg):
         result = []
         j = 0
-        error = 0
+        noAnswerError = 0
+        connectionError = 0
         for i in self.__list:
-            result.append(eval("self." + i)(arg))
+            try:
+                result.append(eval("self." + i)(arg))
+            except:
+                connectionError += 1
+                continue
             if result[j]['status'] is False:
-                error += 1
+                noAnswerError += 1
             j += 1
-        if error == j:
+        j += connectionError
+        if noAnswerError == j:
             raise Exceptions.NoAnswerFound
+        if connectionError == j:
+            raise ConnectionError
         return result
 
     def API1(self, a):
-        url = "http://qs.nnarea.cn/chaoxing_war/topicServlet?action=query&q="
+        url = "http://qs.nnarea.xcn/chaoxing_war/topicServlet?action=query&q="
         r = {'answer':"",'status':False}
         for i in range(0, 4):
             tmp = json.loads(requests.post(url + parse.quote(a['q']), 'course=' + parse.quote(a['curs']) + '&type=' + str(i)).text)
