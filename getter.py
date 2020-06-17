@@ -28,14 +28,19 @@ class getter:
             raise ConnectionError
         return result
 
+    def oneToSharp(self,str):
+        return str.replace("\1","#",999)
+
     def API1(self, a):
         url = "http://qs.nnarea.cn/chaoxing_war/topicServlet?action=query&q="
         r = {'answer':"",'status':False}
-        for i in range(0, 4):
-            tmp = json.loads(requests.post(url + parse.quote(a['q']), 'course=' + parse.quote(a['curs']) + '&type=' + str(i)).text)
-            if tmp['data'] != "目前没思路，等3min左右刷新页面试试":
-                r['status'] = True
-                r['answer'] += tmp['data'] + "\n"
+        tmp = json.loads(requests.post(url + parse.quote(a['q']), 'course=' + parse.quote(a['curs']) + '&type=' + a['type']).text)
+        if tmp['data'] != "目前没思路，等3min左右刷新页面试试":
+            r['status'] = True
+            if self.oneToSharp(tmp['data']).count("#") == 3:
+                tmp['data'] = "全选"
+            r['answer'] += self.oneToSharp(tmp['data'])
+        # type类型已知，无需循环4遍
         return r
 
     def API2(self, a):
@@ -45,7 +50,7 @@ class getter:
             tmp = requests.post(url, "question=" + parse.quote(a['q']) + '&type=' + str(i)).text
             if tmp != "题目不能为nil":
                 r['status'] = True
-                r['answer'] += tmp + "\n"
+                r['answer'] += tmp + "|"
         return r
 
     def API4(self, a):
@@ -54,5 +59,7 @@ class getter:
         r = {'answer':"",'status':False}
         if tmp['msg'] != "可能过几天就有这道题了":
             r['status'] = True
-            r['answer'] = tmp['da']
+            r['answer'] = self.oneToSharp(tmp['da'])
+            if r['answer'].count("#") == 3:
+                r['answer'] = "全选"
         return r

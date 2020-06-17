@@ -14,6 +14,7 @@ import re
 import configparser
 import _thread
 import threading
+import MessageSender
 
 __header = {
     'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
@@ -32,7 +33,19 @@ def save(dicto):
 
 def push(message):
     # MessageBox(0, message, "答案", MB_OK)
-    print(message)
+    ptDict = {'title': "第"+message['no']+"题、"+message['question'], 'content': message['answer']}
+    m = MessageSender.MessageSender("Bark")
+    m.config({'apikey': "gpKSL4RQYEZyTiKyz9vtEe"})
+    len = int(ptDict['content'].__len__())
+    m.send(ptDict)
+    if len <= 10:
+        #time.sleep(0)
+        pass
+    elif len <= 20:
+        time.sleep(3)
+    else:
+        time.sleep(5)
+
 
 
 # clip = pyperclip.paste()
@@ -84,7 +97,7 @@ def findAnswer(a, times):
     j = ['I', 'II', 'III', 'IV']
     h = 0
     try:
-        tmp = g.get({'q': a['question'], 'curs': courseid, 'type': "1", 'token': __token})
+        tmp = g.get({'q': a['question'], 'curs': courseid, 'type': a['type'], 'token': __token})
     except Exceptions.NoAnswerFound:
         try:
             r = findAnswer(a, times+1)
@@ -98,8 +111,7 @@ def findAnswer(a, times):
         for i in tmp:
             if i['answer'] == "":
                 continue
-            str += j[h] + ". : " + "\1" + i['answer'] + "\1"
-            str += '-' * 20
+            str += j[h] + ". : " + i['answer']
             str += "\1"
             h += 1
         save({'no': a['no'], 'question': a['question'], 'answer': str})
@@ -107,7 +119,7 @@ def findAnswer(a, times):
 
 def threadSearch(cf, st, en):
     loop = 1
-    global searched
+    global searched, tasks
     for i in cf.sections():
         if loop < st:
             loop += 1
@@ -116,7 +128,7 @@ def threadSearch(cf, st, en):
             break
         print("查找中...第%d/%d题 : " % (searched, tasks) + cf.get(i, "question"))
         searched += 1
-        findAnswer({'no': i, 'question': cf.get(i, "question")},0)
+        findAnswer({'no': i, 'question': cf.get(i, "question"), "type": cf.get(i, "type")},0)
         cf.remove_section(i)
         loop += 1
 
@@ -155,7 +167,7 @@ def textProcess(text, times):
 
 def startSearch():
     # 初始化题目文件
-    global __questionList
+    global __questionList,tasks
     cfg = configparser.ConfigParser()
     cfg.read("questions.ini", encoding="utf-8")
     threadNum = 6
@@ -186,11 +198,19 @@ def startSearch():
         cfg.write(f)
         f.close()
     del cfg
+
+    __questionList = []
+
+
+def oneToN(str):
+    return str.replace("\1","\n",999)
+
+
+def getAnswers():
     cfg = configparser.ConfigParser()
     cfg.read("answers.ini", encoding="utf-8")
-    for i in cfg.sections():
-        print(i + ":" + cfg.get(i, "answer"))
-    __questionList = []
+    for i in range(1,int(cfg.sections().__len__())+1):
+        __questionList.append({'no':str(i),'question': cfg.get(str(i),"question"),'answer':oneToN(cfg.get(str(i),"answer"))})
 
 
 last_string = pyperclip.paste()
@@ -202,6 +222,11 @@ aipOcr = AipOcr(APP_ID, API_KEY, SECRET_KEY)
 tmp = ""
 baiduAPI = True
 
+startSearch()
+getAnswers()
+for i in __questionList:
+    push(i)
+quit()
 while True:
     if baiduAPI:
         try:
