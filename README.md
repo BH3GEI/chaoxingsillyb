@@ -4,6 +4,32 @@
 # 声明
 本项目仅学习交流使用，切勿将其用于违法犯罪！请于下载后24小时内删除！本人不对该项目造成的任何后果负责！
 
+# 代码暂存
+ocr结果处理算法
+#extract type
+if '单选题' in str
+classification=0
+if '多选题' in str
+classification=1
+if '判断题' in str
+classification=2
+
+#extract serial number
+p1,p2=str.split('/',2)  #按照分数线/分隔，因为全屏仅此一个
+num_orig=p2[0:5]  #取第二段的前五个字符
+list_orig=re.findall("(\d+)",num_orig)  #挑出数字
+num_midd=s.join(list_orig))   #合并list，以防ocr空格分开数字
+num=int(num_midd)
+
+#extract question
+m1,m2=str.split('A',2) #以A为分割
+str=m1  #取前一半
+str=re.sub("[A-Za-z\!\%\.]", "", str) #去掉字母、！、%
+n1,n2=str.split('、',2) #以顿号为分割（全屏唯一）
+str=n2
+
+
+
 # 程序逻辑
 - 自动截屏或用户手动复制所有题目，创建`questions.ini`，其内容为：  
 
