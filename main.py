@@ -31,9 +31,64 @@ def save(dicto):
     __questionList.append(dicto)
 
 
+def detectQuestionType(question):
+    if "单选题" in question:
+        type = 0
+    elif "多选题" in question:
+        type = 1
+    elif "判断题" in question:
+        type = 2
+    else:
+        type = 3
+    return type
+
+
+def detectQuestionNum(question):
+    p1, p2 = question.split('/', 2)  # 按照分数线/分隔，因为全屏仅此一个
+    numOrig = p2[0:5]  # 取第二段的前五个字符
+    listOrig = re.findall("(\d+)", numOrig)  # 挑出数字
+    numMidd = listOrig[0]
+    # 合并list，以防ocr空格分开数字
+    num = int(numMidd)
+    return num
+
+
+def detectQuestionID(question):
+    listOrig = re.findall("(\d+)", question)  # 挑出数字
+    numMidd = listOrig[0]
+    # 合并list，以防ocr空格分开数字
+    num = int(numMidd)
+    return num
+
+
+def preProcessQuestion(question):
+    m1, m2 = question.split('A', 2)  # 以A为分割
+    question = m1  # 取前一半
+    n1 = list(question.split("分)", 2))
+    n1.pop(0)
+    return n1[0]
+
+
+def detectQuestion(question):
+    m1, m2 = question.split('A', 2)  # 以A为分割
+    question = m1  # 取前一半
+    n1 = list(question.split("分)", 2))
+    n1.pop(0)
+    question = ""
+    for i in n1:
+        question += i
+    if '、' in question:
+        question = question.split('、', 2)
+        question = question[1]
+    else:
+        question = question.split(str(detectQuestionID(question[0])), 2)
+        question = question[1]
+    return question
+
+
 def push(message):
     # MessageBox(0, message, "答案", MB_OK)
-    ptDict = {'title': "第" + message['no'] + "题、" + message['question'], 'content': message['answer']}
+    ptDict = {'title': "第" + message['id'] + "题、" + message['question'], 'content': message['answer']}
     m = MessageSender.MessageSender("Bark")
     m.config({'apikey': "gpKSL4RQYEZyTiKyz9vtEe"})
     len = int(ptDict['content'].__len__())
@@ -47,9 +102,9 @@ def push(message):
         time.sleep(5)
 
 
-# clip = pyperclip.paste()
-
-def getDataOCR(aipOcr):
+def getDataOCR(aipOcr, times):
+    if times >= 4:
+        raise ConnectionError
     img1 = ImageGrab.grabclipboard()
     if img1 is None:
         raise Exceptions.ClipNotIMG("剪切板不是图片")
@@ -65,11 +120,16 @@ def getDataOCR(aipOcr):
         f.close()
     # print(type(img2))
     # 识别图片并返回结果
-    result = aipOcr.basicAccurate(img2)
+    try:
+        result = aipOcr.basicAccurate(img2)
+    except ConnectionError:
+        return "ConnectionError"
+    except:
+        data = getDataOCR(aipOcr, times + 1)
 
     data = ''
     for r in result['words_result']:
-        data = data + r['words'] + '\n'
+        data = data + r['words']
     return data
 
 
@@ -83,8 +143,6 @@ def getDataPaste(last):
 def getFromBaidu(question):
     b = webdriver.Chrome()
     b.get("https://www.baidu.com/s?wd=" + parse.quote(question))
-    # b.find_element_by_id("kw").send_keys(question)
-    # b.find_element_by_id("su").click()
 
 
 def findAnswer(a, times):
@@ -113,7 +171,7 @@ def findAnswer(a, times):
             str += j[h] + ". : " + i['answer']
             str += "\1"
             h += 1
-        save({'no': a['no'], 'question': a['question'], 'answer': str})
+        return {'id': a['id'], 'question': a['question'], 'answer': str}
 
 
 def threadSearch(cf, st, en):
@@ -127,7 +185,7 @@ def threadSearch(cf, st, en):
             break
         print("查找中...第%d/%d题 : " % (searched, tasks) + cf.get(i, "question"))
         searched += 1
-        findAnswer({'no': i, 'question': cf.get(i, "question"), "type": cf.get(i, "type")}, 0)
+        save(findAnswer({'id': i, 'question': cf.get(i, "question"), "type": cf.get(i, "type")}, 0))
         cf.remove_section(i)
         loop += 1
 
@@ -143,9 +201,6 @@ def textProcess(text, times):
         targetText = targetText.replace("\xa0", '')
         targetText = targetText.replace("\x20", '')
         targetText = targetText.replace("\u3000", '')
-        targetText = targetText.replace("1、", " ")
-        targetText = targetText.replace("2、", " ")
-        targetText = targetText.replace("3、", " ")
         targetText = targetText.lstrip()
         targetText = targetText.rstrip()
     elif times == 1:
@@ -162,6 +217,10 @@ def textProcess(text, times):
         str1, str2, str3, str4, str5 = re.split(pattern, targetText)
         targetText = str1
     return targetText
+
+
+def sortByEleID(element):
+    return int(element['id'])
 
 
 def startSearch():
@@ -187,32 +246,17 @@ def startSearch():
         cfg.write(f)
         f.close()
     del cfg
+    __questionList.sort(key=sortByEleID)
     cfg = configparser.ConfigParser()
     for i in __questionList:
-        cfg.add_section(i['no'])
-        cfg.set(i['no'], "question", i['question'])
-        cfg.set(i['no'], "answer", i['answer'])
+        cfg.add_section(i['id'])
+        cfg.set(i['id'], "question", i['question'])
+        cfg.set(i['id'], "answer", i['answer'])
 
     with open("answers.ini", "w", encoding="utf-8") as f:
         cfg.write(f)
         f.close()
     del cfg
-    __questionList = []
-    cfg = configparser.ConfigParser()
-    cfg.read("answers.ini", encoding="utf-8")
-    for i in range(1, int(cfg.sections().__len__()) + 1):
-        __questionList.append(
-            {'no': str(i), 'question': cfg.get(str(i), "question"), 'answer': oneToN(cfg.get(str(i), "answer"))})
-    del cfg
-    cfg = configparser.ConfigParser()
-    for i in __questionList:
-        cfg.add_section(i['no'])
-        cfg.set(i['no'], "question", i['question'])
-        cfg.set(i['no'], "answer", nToOne(i['answer']))
-
-    with open("answers.ini", "w", encoding="utf-8") as f:
-        cfg.write(f)
-        f.close()
 
 
 def oneToN(str):
@@ -223,23 +267,34 @@ def nToOne(str):
     return str.replace("\n", "\1", 999)
 
 
-last_string = pyperclip.paste()
-APP_ID = '19124804'
-API_KEY = 'cCMaB793Gff1w6yE9HojaE4z'
-SECRET_KEY = 'PMMOEcom53RHgXpwXfoHObilbf4V3oQe'
+lastString = ""
+appID = '19124804'
+apiKey = 'cCMaB793Gff1w6yE9HojaE4z'
+secretKey = 'PMMOEcom53RHgXpwXfoHObilbf4V3oQe'
 # 初始化AipOcr
-aipOcr = AipOcr(APP_ID, API_KEY, SECRET_KEY)
+aipOcr = AipOcr(appID, apiKey, secretKey)
 tmp = ""
 baiduAPI = True
 
-startSearch()
-for i in __questionList:
-    push(i)
-quit()
-while True:
+cfg = configparser.ConfigParser()
+
+initFlag = True
+numOfQuestions = 0
+nowNum = 0
+print("开始初始化...")
+while initFlag:
+    try:
+        numOfQuestions = detectQuestionNum(getDataOCR(aipOcr, 0))
+    except:
+        continue
+    else:
+        initFlag = False
+
+print("开始获取题目内容...")
+while (nowNum - numOfQuestions) != 0:
     if baiduAPI:
         try:
-            tmp = getDataOCR(aipOcr)
+            tmp = getDataOCR(aipOcr, 0)
         except Exceptions.ClipNotIMG:
             tmp = getDataPaste("")
         except:
@@ -248,5 +303,25 @@ while True:
         tmp = getDataPaste(tmp)
         if tmp == "":
             continue
-    tmpS = textProcess(tmp)
-    startSearch()
+    if lastString == detectQuestion(textProcess(tmp, 0)):
+        continue
+    q = textProcess(tmp, 0)
+    nowNum += 1
+    lastString = detectQuestion(q)
+    print("第%d/%d题:" %(nowNum, numOfQuestions) + detectQuestion(q))
+    now = detectQuestionID(preProcessQuestion(q))
+    cfg.add_section(str(now))
+    cfg.set(str(now), "question", detectQuestion(q))
+    cfg.set(str(now), "type", str(detectQuestionType(q)))
+
+with open("questions.ini", "w", encoding="utf-8") as f:
+    cfg.write(f)
+    f.close()
+    del cfg
+
+print("开始查找...")
+startSearch()
+print("正在推送...")
+for i in __questionList:
+    print("第%d/%d题..." % (int(i['ID']),numOfQuestions))
+    push(i)
