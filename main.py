@@ -33,19 +33,18 @@ def save(dicto):
 
 def push(message):
     # MessageBox(0, message, "答案", MB_OK)
-    ptDict = {'title': "第"+message['no']+"题、"+message['question'], 'content': message['answer']}
+    ptDict = {'title': "第" + message['no'] + "题、" + message['question'], 'content': message['answer']}
     m = MessageSender.MessageSender("Bark")
     m.config({'apikey': "gpKSL4RQYEZyTiKyz9vtEe"})
     len = int(ptDict['content'].__len__())
     m.send(ptDict)
     if len <= 10:
-        #time.sleep(0)
+        # time.sleep(0)
         pass
     elif len <= 20:
         time.sleep(3)
     else:
         time.sleep(5)
-
 
 
 # clip = pyperclip.paste()
@@ -100,7 +99,7 @@ def findAnswer(a, times):
         tmp = g.get({'q': a['question'], 'curs': courseid, 'type': a['type'], 'token': __token})
     except Exceptions.NoAnswerFound:
         try:
-            r = findAnswer(a, times+1)
+            r = findAnswer(a, times + 1)
         except:
             getFromBaidu(a['question'])
         else:
@@ -128,7 +127,7 @@ def threadSearch(cf, st, en):
             break
         print("查找中...第%d/%d题 : " % (searched, tasks) + cf.get(i, "question"))
         searched += 1
-        findAnswer({'no': i, 'question': cf.get(i, "question"), "type": cf.get(i, "type")},0)
+        findAnswer({'no': i, 'question': cf.get(i, "question"), "type": cf.get(i, "type")}, 0)
         cf.remove_section(i)
         loop += 1
 
@@ -167,7 +166,7 @@ def textProcess(text, times):
 
 def startSearch():
     # 初始化题目文件
-    global __questionList,tasks
+    global __questionList, tasks
     cfg = configparser.ConfigParser()
     cfg.read("questions.ini", encoding="utf-8")
     threadNum = 6
@@ -198,19 +197,30 @@ def startSearch():
         cfg.write(f)
         f.close()
     del cfg
-
     __questionList = []
+    cfg = configparser.ConfigParser()
+    cfg.read("answers.ini", encoding="utf-8")
+    for i in range(1, int(cfg.sections().__len__()) + 1):
+        __questionList.append(
+            {'no': str(i), 'question': cfg.get(str(i), "question"), 'answer': oneToN(cfg.get(str(i), "answer"))})
+    del cfg
+    cfg = configparser.ConfigParser()
+    for i in __questionList:
+        cfg.add_section(i['no'])
+        cfg.set(i['no'], "question", i['question'])
+        cfg.set(i['no'], "answer", nToOne(i['answer']))
+
+    with open("answers.ini", "w", encoding="utf-8") as f:
+        cfg.write(f)
+        f.close()
 
 
 def oneToN(str):
-    return str.replace("\1","\n",999)
+    return str.replace("\1", "\n", 999)
 
 
-def getAnswers():
-    cfg = configparser.ConfigParser()
-    cfg.read("answers.ini", encoding="utf-8")
-    for i in range(1,int(cfg.sections().__len__())+1):
-        __questionList.append({'no':str(i),'question': cfg.get(str(i),"question"),'answer':oneToN(cfg.get(str(i),"answer"))})
+def nToOne(str):
+    return str.replace("\n", "\1", 999)
 
 
 last_string = pyperclip.paste()
@@ -223,7 +233,6 @@ tmp = ""
 baiduAPI = True
 
 startSearch()
-getAnswers()
 for i in __questionList:
     push(i)
 quit()
