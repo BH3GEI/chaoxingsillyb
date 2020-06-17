@@ -62,27 +62,29 @@ def detectQuestionID(question):
 
 
 def preProcessQuestion(question):
-    m1, m2 = question.split('A', 2)  # 以A为分割
-    question = m1  # 取前一半
+    m1 = question.split('A', 2)  # 以A为分割
+    question = m1[0]  # 取前一半
     n1 = list(question.split("分)", 2))
     n1.pop(0)
     return n1[0]
 
 
 def detectQuestion(question):
-    m1, m2 = question.split('A', 2)  # 以A为分割
-    question = m1  # 取前一半
+    m1 = question.split('A', 2)  # 以A为分割
+    question = m1[0]  # 取前一半
+    print(m1)
     n1 = list(question.split("分)", 2))
     n1.pop(0)
+    print(n1)
     question = ""
     for i in n1:
         question += i
-    if '、' in question:
+    """if '、' in question:
         question = question.split('、', 2)
         question = question[1]
     else:
         question = question.split(str(detectQuestionID(question[0])), 2)
-        question = question[1]
+        question = question[1]"""
     return question
 
 
@@ -110,7 +112,7 @@ def getDataOCR(aipOcr, times):
         raise Exceptions.ClipNotIMG("剪切板不是图片")
     # print(type(img))
     # 文件保存的名字
-    img_path = '1.png'
+    img_path = 'question.png'
     # 保存图片
     img1.save(img_path)
     # 百度api执行所需数据，运行需换成自己的APP_ID，API_KEY，SECRET_KEY
@@ -130,6 +132,7 @@ def getDataOCR(aipOcr, times):
     data = ''
     for r in result['words_result']:
         data = data + r['words']
+    time.sleep(1)
     return data
 
 
@@ -268,9 +271,9 @@ def nToOne(str):
 
 
 lastString = ""
-appID = '19124804'
-apiKey = 'cCMaB793Gff1w6yE9HojaE4z'
-secretKey = 'PMMOEcom53RHgXpwXfoHObilbf4V3oQe'
+appID = '18825234'#'19124804'
+apiKey = 'eRwWUDBfne3iKuRD1csC25Ga'#'cCMaB793Gff1w6yE9HojaE4z'
+secretKey = 'e6nF9IZ7fGpt0EudikQYeUZID2DFf6GN'#'PMMOEcom53RHgXpwXfoHObilbf4V3oQe'
 # 初始化AipOcr
 aipOcr = AipOcr(appID, apiKey, secretKey)
 tmp = ""
@@ -281,6 +284,7 @@ cfg = configparser.ConfigParser()
 initFlag = True
 numOfQuestions = 0
 nowNum = 0
+tp = 0
 print("开始初始化...")
 while initFlag:
     try:
@@ -305,14 +309,21 @@ while (nowNum - numOfQuestions) != 0:
             continue
     if lastString == detectQuestion(textProcess(tmp, 0)):
         continue
+
     q = textProcess(tmp, 0)
     nowNum += 1
-    lastString = detectQuestion(q)
-    print("第%d/%d题:" %(nowNum, numOfQuestions) + detectQuestion(q))
-    now = detectQuestionID(preProcessQuestion(q))
-    cfg.add_section(str(now))
-    cfg.set(str(now), "question", detectQuestion(q))
-    cfg.set(str(now), "type", str(detectQuestionType(q)))
+    try:
+        lastString = detectQuestion(q)
+        lastType = detectQuestionType(q)
+        print("第%d/%d题:" %(nowNum, numOfQuestions) + detectQuestion(q))
+        now = nowNum
+        #now = detectQuestionID(preProcessQuestion(q)) + tp
+        cfg.add_section(str(now))
+        cfg.set(str(now), "question", detectQuestion(q))
+        cfg.set(str(now), "type", str(detectQuestionType(q)))
+    except:
+        nowNum -= 1
+        continue
 
 with open("questions.ini", "w", encoding="utf-8") as f:
     cfg.write(f)
