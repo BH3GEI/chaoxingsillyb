@@ -70,21 +70,14 @@ def preProcessQuestion(question):
 
 
 def detectQuestion(question):
-    m1 = question.split('A', 2)  # 以A为分割
-    question = m1[0]  # 取前一半
-    print(m1)
-    n1 = list(question.split("分)", 2))
-    n1.pop(0)
+    n1 = preProcessQuestion(question)
     print(n1)
     question = ""
     for i in n1:
         question += i
-    """if '、' in question:
-        question = question.split('、', 2)
-        question = question[1]
-    else:
-        question = question.split(str(detectQuestionID(question[0])), 2)
-        question = question[1]"""
+    if re.findall("(\d+)、",question):
+        question = question.replace("、","",1)
+    question = question[1:]
     return question
 
 
@@ -123,10 +116,12 @@ def getDataOCR(aipOcr, times):
     # print(type(img2))
     # 识别图片并返回结果
     try:
-        result = aipOcr.basicAccurate(img2)
+        result = aipOcr.basicGeneral(img2)
     except ConnectionError:
+        print("asss")
         return "ConnectionError"
     except:
+        print("???")
         data = getDataOCR(aipOcr, times + 1)
 
     data = ''
@@ -144,13 +139,12 @@ def getDataPaste(last):
 
 
 def getFromBaidu(question):
-    b = webdriver.Chrome()
-    b.get("https://www.baidu.com/s?wd=" + parse.quote(question))
+    print("shit!")
 
 
 def findAnswer(a, times):
     if times == 4:
-        raise Exceptions.NoAnswerFound
+        raise Exceptions.NoAnswerFoundAtAll
     courseid = "206267220"
     g = getter.getter()
     str = ""
@@ -160,8 +154,8 @@ def findAnswer(a, times):
         tmp = g.get({'q': a['question'], 'curs': courseid, 'type': a['type'], 'token': __token})
     except Exceptions.NoAnswerFound:
         try:
-            r = findAnswer(a, times + 1)
-        except:
+            r = findAnswer(textProcess(a,times+1), times + 1)
+        except Exceptions.NoAnswerFoundAtAll:
             getFromBaidu(a['question'])
         else:
             return r
@@ -211,19 +205,20 @@ def textProcess(text, times):
         targetText = targetText.replace("）", ")")
         targetText = targetText.replace("，", ",")
         targetText = targetText.replace("。", " ")
-    elif times == 2:
         targetText = targetText.replace("(", "（")
         targetText = targetText.replace(")", "）")
         targetText = targetText.replace(",", "，")
+    elif times == 2:
+        targetText = targetText[0:int(targetText.__len__())/2]
     else:
         pattern = r'，|,|。|;|：|:|;'
-        str1, str2, str3, str4, str5 = re.split(pattern, targetText)
-        targetText = str1
+        str1= re.split(pattern, targetText)
+        targetText = str1[0]
     return targetText
 
 
 def sortByEleID(element):
-    return int(element['id'])
+    return element['id']
 
 
 def startSearch():
@@ -253,6 +248,7 @@ def startSearch():
     cfg = configparser.ConfigParser()
     for i in __questionList:
         cfg.add_section(i['id'])
+        cfg.set(i['id'], "relativeID", i['rID'])
         cfg.set(i['id'], "question", i['question'])
         cfg.set(i['id'], "answer", i['answer'])
 
@@ -285,6 +281,36 @@ initFlag = True
 numOfQuestions = 0
 nowNum = 0
 tp = 0
+lastType = 0
+
+# 手动模式
+manualMode = True
+startTime = time.time()
+if manualMode:
+    while 101 != nowNum:
+        if baiduAPI:
+            try:
+                tmp = getDataOCR(aipOcr, 0)
+            except Exceptions.ClipNotIMG:
+                tmp = getDataPaste("")
+            except:
+                continue
+        else:
+            tmp = getDataPaste(tmp)
+            if tmp == "":
+                continue
+        if lastString == textProcess(tmp, 0):
+            endTime = time.time()
+            if endTime - startTime >= 3000:
+                quit()
+            continue
+        else:
+            startTime = time.time()
+            lastString = textProcess(tmp,0)
+            nowNum+=1
+            print(findAnswer({'id': 0,'question': textProcess(tmp,0), 'type':0},0)['answer'])
+
+quit()
 print("开始初始化...")
 while initFlag:
     try:
@@ -309,18 +335,21 @@ while (nowNum - numOfQuestions) != 0:
             continue
     if lastString == detectQuestion(textProcess(tmp, 0)):
         continue
+    if lastType != int(detectQuestionType(textProcess(tmp, 0))):
+        tp = nowNum
 
     q = textProcess(tmp, 0)
     nowNum += 1
     try:
         lastString = detectQuestion(q)
-        lastType = detectQuestionType(q)
+        lastType = int(detectQuestionType(q))
         print("第%d/%d题:" %(nowNum, numOfQuestions) + detectQuestion(q))
-        now = nowNum
-        #now = detectQuestionID(preProcessQuestion(q)) + tp
-        cfg.add_section(str(now))
-        cfg.set(str(now), "question", detectQuestion(q))
-        cfg.set(str(now), "type", str(detectQuestionType(q)))
+        #now = nowNum
+        now = detectQuestionID(preProcessQuestion(q)) + tp
+        cfg.add_section(str(lastType)+str(now))
+        cfg.set(str(lastType)+str(now), "relativeID", str(now))
+        cfg.set(str(lastType)+str(now), "question", detectQuestion(q))
+        cfg.set(str(lastType)+str(now), "type", str(detectQuestionType(q)))
     except:
         nowNum -= 1
         continue

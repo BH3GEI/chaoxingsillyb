@@ -2,5 +2,10 @@ class ClipNotIMG(BaseException):
     pass
 
 
-class NoAnswerFound(ConnectionError):
+class NoAnswerFound(BaseException):
     pass
+
+
+class NoAnswerFoundAtAll(NoAnswerFound):
+    pass
+
