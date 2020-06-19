@@ -5,27 +5,23 @@ import Exceptions
 
 
 class getter:
-    __list = ["API4", "API1", "API2"]
+    __list = ["API4", "API1"]
 
     def get(self, arg):
         result = []
         j = 0
         noAnswerError = 0
-        connectionError = 0
         for i in self.__list:
             try:
                 result.append(eval("self." + i)(arg))
             except:
-                connectionError += 1
+                noAnswerError += 1
                 continue
             if result[j]['status'] is False:
                 noAnswerError += 1
             j += 1
-        j += connectionError
         if noAnswerError == j:
             raise Exceptions.NoAnswerFound
-        if connectionError == j:
-            raise ConnectionError
         return result
 
     def oneToSharp(self,str):
@@ -34,11 +30,9 @@ class getter:
     def API1(self, a):
         url = "http://qs.nnarea.cn/chaoxing_war/topicServlet?action=query&q="
         r = {'answer':"",'status':False}
-        tmp = json.loads(requests.post(url + parse.quote(a['q']), 'course=' + parse.quote(a['curs']) + '&type=' + a['type']).text)
+        tmp = json.loads(requests.post(url + parse.quote(a['q']), '&course=' + parse.quote(str(a['curs'])) + '&type=' + str(a['type'])).text)
         if tmp['data'] != "目前没思路，等3min左右刷新页面试试":
             r['status'] = True
-            if self.oneToSharp(tmp['data']).count("#") == 3:
-                tmp['data'] = "全选"
             r['answer'] += self.oneToSharp(tmp['data'])
         # type类型已知，无需循环4遍
         return r
@@ -60,6 +54,4 @@ class getter:
         if tmp['msg'] != "可能过几天就有这道题了":
             r['status'] = True
             r['answer'] = self.oneToSharp(tmp['da'])
-            if r['answer'].count("#") == 3:
-                r['answer'] = "全选"
         return r

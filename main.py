@@ -15,6 +15,7 @@ import configparser
 import _thread
 import threading
 import MessageSender
+from OcrApis import OcrApis
 
 __header = {
     'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
@@ -54,7 +55,7 @@ def detectQuestionNum(question):
 
 
 def detectQuestionID(question):
-    listOrig = re.findall("(\d+)", question)  # 挑出数字
+    listOrig = re.findall("(\d+)、", question)  # 挑出数字
     numMidd = listOrig[0]
     # 合并list，以防ocr空格分开数字
     num = int(numMidd)
@@ -64,20 +65,31 @@ def detectQuestionID(question):
 def preProcessQuestion(question):
     m1 = question.split('A', 2)  # 以A为分割
     question = m1[0]  # 取前一半
-    n1 = list(question.split("分)", 2))
+    splitChar = "分)"
+    if "分）" in question:
+        splitChar = "分）"
+    n1 = list(question.split(splitChar, 2))
     n1.pop(0)
     return n1[0]
 
 
+def removeQuestionNum(question):
+    if re.findall("(\d+)、",question):
+        question = question.replace("、","",1)
+        question = question.replace(str(re.findall("(\d+)", question)[0]),"",1)
+    else: question = question.replace(str(re.findall("(\d+)", question)[0]),"",1)
+    return question
+
+
+
+
+
 def detectQuestion(question):
     n1 = preProcessQuestion(question)
-    print(n1)
     question = ""
     for i in n1:
         question += i
-    if re.findall("(\d+)、",question):
-        question = question.replace("、","",1)
-    question = question[1:]
+    question = removeQuestionNum(question)
     return question
 
 
@@ -97,7 +109,8 @@ def push(message):
         time.sleep(5)
 
 
-def getDataOCR(aipOcr, times):
+def getDataOCR(times):
+    g = OcrApis()
     if times >= 4:
         raise ConnectionError
     img1 = ImageGrab.grabclipboard()
@@ -116,19 +129,21 @@ def getDataOCR(aipOcr, times):
     # print(type(img2))
     # 识别图片并返回结果
     try:
-        result = aipOcr.basicGeneral(img2)
+        #appID = '18825234'  # '19124804'
+        #apiKey = 'eRwWUDBfne3iKuRD1csC25Ga'  # 'cCMaB793Gff1w6yE9HojaE4z'
+        #secretKey = 'e6nF9IZ7fGpt0EudikQYeUZID2DFf6GN'  # 'PMMOEcom53RHgXpwXfoHObilbf4V3oQe'
+        result = g.get({'tencentAppID': "1302464488",
+                        'tencentSecretID': "AKIDd1Rc6KFxOZT7X1wD1aNvDF5ex0nPZThg",
+                        'tencentSecretKey': "rRknxrVs3zjFqDKCn9dsrZ092edOt751",
+                        'baiduAppID': "19124804",
+                        'baiduSecretID': "cCMaB793Gff1w6yE9HojaE4z",
+                        'baiduSecretKey': "PMMOEcom53RHgXpwXfoHObilbf4V3oQe",
+                        'file': img2})
     except ConnectionError:
-        print("asss")
         return "ConnectionError"
     except:
-        print("???")
-        data = getDataOCR(aipOcr, times + 1)
-
-    data = ''
-    for r in result['words_result']:
-        data = data + r['words']
-    time.sleep(1)
-    return data
+        result = getDataOCR(times + 1)
+    return result[0]
 
 
 def getDataPaste(last):
@@ -153,15 +168,15 @@ def findAnswer(a, times):
     try:
         tmp = g.get({'q': a['question'], 'curs': courseid, 'type': a['type'], 'token': __token})
     except Exceptions.NoAnswerFound:
+        print("第%d遍搜索失败！" % (times+1))
         try:
-            r = findAnswer(textProcess(a,times+1), times + 1)
+            r = findAnswer(textProcess(a['question'],times+1), times + 1)
         except Exceptions.NoAnswerFoundAtAll:
             getFromBaidu(a['question'])
         else:
             return r
-    except ConnectionError:
-        return "连接出错"
     else:
+        print("搜索成功！")
         for i in tmp:
             if i['answer'] == "":
                 continue
@@ -267,11 +282,9 @@ def nToOne(str):
 
 
 lastString = ""
-appID = '18825234'#'19124804'
-apiKey = 'eRwWUDBfne3iKuRD1csC25Ga'#'cCMaB793Gff1w6yE9HojaE4z'
-secretKey = 'e6nF9IZ7fGpt0EudikQYeUZID2DFf6GN'#'PMMOEcom53RHgXpwXfoHObilbf4V3oQe'
+
 # 初始化AipOcr
-aipOcr = AipOcr(appID, apiKey, secretKey)
+
 tmp = ""
 baiduAPI = True
 
@@ -290,7 +303,7 @@ if manualMode:
     while 101 != nowNum:
         if baiduAPI:
             try:
-                tmp = getDataOCR(aipOcr, 0)
+                tmp = getDataOCR(0)
             except Exceptions.ClipNotIMG:
                 tmp = getDataPaste("")
             except:
@@ -310,11 +323,10 @@ if manualMode:
             nowNum+=1
             print(findAnswer({'id': 0,'question': textProcess(tmp,0), 'type':0},0)['answer'])
 
-quit()
 print("开始初始化...")
 while initFlag:
     try:
-        numOfQuestions = detectQuestionNum(getDataOCR(aipOcr, 0))
+        numOfQuestions = detectQuestionNum(getDataOCR(0))
     except:
         continue
     else:
@@ -324,7 +336,7 @@ print("开始获取题目内容...")
 while (nowNum - numOfQuestions) != 0:
     if baiduAPI:
         try:
-            tmp = getDataOCR(aipOcr, 0)
+            tmp = getDataOCR(0)
         except Exceptions.ClipNotIMG:
             tmp = getDataPaste("")
         except:
