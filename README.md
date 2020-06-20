@@ -45,6 +45,7 @@
 - 【这十几个api咱们总不能等挨个查完再出答案，能不能设置个多线程，同时访问，有结果出来了就直接弹出，剩下的慢慢查，以后放到ini文件里面】
 - 【有的直接输入题目就能出答案，有的不行但是脚本能用，你可以找一下这个url的位置然后康康上下文是不是有加密。我看不出来，太菜了。】
 - 【有些无token，仅有url；有些不全，搜题报错比较多；有的似乎已经挂了，也可能是设置了加密；有些写的有token，但是我找不到】
+- 
 - I
 - http://lyck6.cn/token/api2.php  http://lyck6.cn/token/newapi.php    http://cx.lyck6.cn/api/newapi1.php
 - 来自网址https://greasyfork.org/zh-CN/scripts/401715-%E8%B6%85%E6%98%9F%E5%B0%94%E9%9B%85%E5%AD%A6%E4%B9%A0%E9%80%9A%E8%80%83%E8%AF%95%E4%B8%93%E7%89%88-%E4%B8%AA%E4%BA%BA%E9%A2%98%E5%BA%93-%E6%9C%80%E6%96%B0%E7%89%88%E5%8F%AF%E7%AD%94%E9%A2%98/code
