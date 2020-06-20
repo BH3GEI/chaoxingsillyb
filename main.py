@@ -88,6 +88,19 @@ def detectQuestion(question):
     return question
 #调用上一个函数删除题号，得到纯文本题干
 
+def halfCut(question):
+    firstpart, secondpart = question[:len(question) / 2], question[len(question) / 2:]
+    return question
+#砍两半
+
+def commaCut(question):
+    if "," in question:
+        piece1, piece2 = question.split(',', 2)
+    if "，" in question:
+        piece1, piece2 = question.split('，', 2)
+    return piece1 , piece2
+#按逗号砍，砍成两段，两个字符串，建议都搜一遍
+
 def push(message):
     # MessageBox(0, message, "答案", MB_OK)
     ptDict = {'title': "第" + message['id'] + "题、" + message['question'], 'content': message['answer']}
