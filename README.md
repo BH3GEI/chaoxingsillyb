@@ -45,6 +45,8 @@
 - 【这十几个api咱们总不能等挨个查完再出答案，能不能设置个多线程，同时访问，有结果出来了就直接弹出，剩下的慢慢查，以后放到ini文件里面】
 - 【有的直接输入题目就能出答案，有的不行但是脚本能用，你可以找一下这个url的位置然后康康上下文是不是有加密。我看不出来，太菜了。】
 - 【有些无token，仅有url；有些不全，搜题报错比较多；有的似乎已经挂了，也可能是设置了加密；有些写的有token，但是我找不到】
+- 【之前那个404的今晚似乎突然好了，我应该包含在下面了】
+- 【找见几个似乎需要氪金的，放在最后了，临时折腾一下，能氪则氪能用则用，用不了趁早放弃】
 - 
 - I
 - http://lyck6.cn/token/api2.php  http://lyck6.cn/token/newapi.php    http://cx.lyck6.cn/api/newapi1.php
@@ -95,4 +97,15 @@
 - XII
 - http://106.52.197.16:8080/chaoxing_war/topicServlet?action=query&q=
 - 来自网址https://greasyfork.org/zh-CN/scripts/403911-%E8%B6%85%E6%98%9F%E5%B0%94%E9%9B%85%E5%AD%A6%E4%B9%A0%E9%80%9A%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B-%E6%9C%80%E5%BC%BA%E9%A2%98%E5%BA%93-%E7%B2%BE%E5%87%86%E7%AD%94%E9%A2%98/code
-
+- 
+- XIII
+- http://123.207.19.72/api/query
+- 来自网址https://www.jianshu.com/p/8ea4a09f0ea3
+- 
+- XIV
+- http://jiekou.ouliweb.cn/jiekou.php?key=用户密钥&info=网课题目
+- 来自网址https://jiekou.ouliweb.cn/doc.html
+- 
+- XV
+- http://free.han8.net/?ti=题目
+- 来自网址https://www.vvhan.com/wangke.html
