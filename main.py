@@ -27,10 +27,8 @@ __questionList = []
 searched = 1
 tasks = 0
 
-
 def save(dicto):
     __questionList.append(dicto)
-
 
 def detectQuestionType(question):
     if "单选题" in question:
@@ -42,7 +40,7 @@ def detectQuestionType(question):
     else:
         type = 3
     return type
-
+#提取题型
 
 def detectQuestionNum(question):
     p1, p2 = question.split('/', 2)  # 按照分数线/分隔，因为全屏仅此一个
@@ -52,7 +50,7 @@ def detectQuestionNum(question):
     # 合并list，以防ocr空格分开数字
     num = int(numMidd)
     return num
-
+#提取总题数
 
 def detectQuestionID(question):
     listOrig = re.findall("(\d+)、", question)  # 挑出数字
@@ -60,7 +58,7 @@ def detectQuestionID(question):
     # 合并list，以防ocr空格分开数字
     num = int(numMidd)
     return num
-
+#提取题号
 
 def preProcessQuestion(question):
     m1 = question.split('A', 2)  # 以A为分割
@@ -71,7 +69,7 @@ def preProcessQuestion(question):
     n1 = list(question.split(splitChar, 2))
     n1.pop(0)
     return n1[0]
-
+#预提取题干（带题号）
 
 def removeQuestionNum(question):
     if re.findall("(\d+)、",question):
@@ -79,10 +77,7 @@ def removeQuestionNum(question):
         question = question.replace(str(re.findall("(\d+)", question)[0]),"",1)
     else: question = question.replace(str(re.findall("(\d+)", question)[0]),"",1)
     return question
-
-
-
-
+#删除题干的题号
 
 def detectQuestion(question):
     n1 = preProcessQuestion(question)
@@ -91,7 +86,7 @@ def detectQuestion(question):
         question += i
     question = removeQuestionNum(question)
     return question
-
+#调用上一个函数删除题号，得到纯文本题干
 
 def push(message):
     # MessageBox(0, message, "答案", MB_OK)
@@ -107,7 +102,7 @@ def push(message):
         time.sleep(3)
     else:
         time.sleep(5)
-
+#推送到ios设备
 
 def getDataOCR(times):
     g = OcrApis()
@@ -117,12 +112,9 @@ def getDataOCR(times):
     if img1 is None:
         raise Exceptions.ClipNotIMG("剪切板不是图片")
     # print(type(img))
-    # 文件保存的名字
     img_path = 'question.png'
-    # 保存图片
     img1.save(img_path)
-    # 百度api执行所需数据，运行需换成自己的APP_ID，API_KEY，SECRET_KEY
-
+    #保存图片
     with open(img_path, 'rb') as f:
         img2 = f.read()
         f.close()
@@ -296,11 +288,19 @@ nowNum = 0
 tp = 0
 lastType = 0
 
-# 手动模式
-manualMode = True
+manualMode=True
+modeChoice=input("是否选择手动模式？y/n\n")
+def yourMode(modeChoice):
+    if modeChoice=="y":
+        manualMode = True
+    if modeChoice=="n":
+        manualMode = False
+    return manualMode
+
+
 startTime = time.time()
-if manualMode:
-    while 101 != nowNum:
+if yourMode(modeChoice)==True:
+    while 101 >= nowNum:
         if baiduAPI:
             try:
                 tmp = getDataOCR(0)
