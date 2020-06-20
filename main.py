@@ -97,7 +97,7 @@ def push(message):
     # MessageBox(0, message, "答案", MB_OK)
     ptDict = {'title': "第" + message['id'] + "题、" + message['question'], 'content': message['answer']}
     m = MessageSender.MessageSender("Bark")
-    m.config({'apikey': "gpKSL4RQYEZyTiKyz9vtEe"})
+    m.config({'apikey': "ZjqUwWtw3YSk8faGxvLmm6"})
     len = int(ptDict['content'].__len__())
     m.send(ptDict)
     if len <= 10:
