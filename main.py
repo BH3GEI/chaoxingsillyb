@@ -297,7 +297,6 @@ def yourMode(modeChoice):
         manualMode = False
     return manualMode
 
-
 startTime = time.time()
 if yourMode(modeChoice)==True:
     while 101 >= nowNum:
