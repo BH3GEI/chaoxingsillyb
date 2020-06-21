@@ -2,27 +2,30 @@ import requests
 from urllib import parse
 import json
 import Exceptions
-
+import threading
 
 class getter:
     __list = ["API4", "API1"]
-
+    __result = []
     def get(self, arg):
-        result = []
+        self.__result = []
         j = 0
+        t = []
         noAnswerError = 0
         for i in self.__list:
             try:
-                result.append(eval("self." + i)(arg))
+                self.__result.append(eval("self." + i)(arg))
+                #t.append(threading.Thread(target=getattr(self,i),args=(arg)))
+                #t[j].start()
             except:
                 noAnswerError += 1
                 continue
-            if result[j]['status'] is False:
+            if self.__result[j]['status'] is False:
                 noAnswerError += 1
             j += 1
         if noAnswerError == j:
             raise Exceptions.NoAnswerFound
-        return result
+        return self.__result
 
     def oneToSharp(self,str):
         return str.replace("\1","#",999)

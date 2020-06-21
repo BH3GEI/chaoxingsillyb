@@ -1,21 +1,14 @@
 import pyperclip
-import requests
-import json
-from urllib import parse
 import Exceptions
-from selenium import webdriver
 from PIL import ImageGrab
-from aip import AipOcr
 import getter
-from win32api import MessageBox
-from win32con import MB_OK
 import time
 import re
 import configparser
-import _thread
 import threading
 import MessageSender
 from OcrApis import OcrApis
+from functools import cmp_to_key
 
 __header = {
     'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
@@ -27,8 +20,10 @@ __questionList = []
 searched = 1
 tasks = 0
 
+
 def save(dicto):
     __questionList.append(dicto)
+
 
 def detectQuestionType(question):
     if "单选题" in question:
@@ -42,6 +37,7 @@ def detectQuestionType(question):
     return type
 #提取题型
 
+
 def detectQuestionNum(question):
     p1, p2 = question.split('/', 2)  # 按照分数线/分隔，因为全屏仅此一个
     numOrig = p2[0:5]  # 取第二段的前五个字符
@@ -52,6 +48,7 @@ def detectQuestionNum(question):
     return num
 #提取总题数
 
+
 def detectQuestionID(question):
     listOrig = re.findall("(\d+)、", question)  # 挑出数字
     numMidd = listOrig[0]
@@ -59,6 +56,7 @@ def detectQuestionID(question):
     num = int(numMidd)
     return num
 #提取题号
+
 
 def preProcessQuestion(question):
     m1 = question.split('A', 2)  # 以A为分割
@@ -71,6 +69,7 @@ def preProcessQuestion(question):
     return n1[0]
 #预提取题干（带题号）
 
+
 def removeQuestionNum(question):
     if re.findall("(\d+)、",question):
         question = question.replace("、","",1)
@@ -78,6 +77,7 @@ def removeQuestionNum(question):
     else: question = question.replace(str(re.findall("(\d+)", question)[0]),"",1)
     return question
 #删除题干的题号
+
 
 def detectQuestion(question):
     n1 = preProcessQuestion(question)
@@ -88,24 +88,27 @@ def detectQuestion(question):
     return question
 #调用上一个函数删除题号，得到纯文本题干
 
+
 def halfCut(question):
-    firstpart, secondpart = question[:len(question) / 2], question[len(question) / 2:]
+    firstpart = question[:len(question) / 2], question[len(question) / 2:]
     return question
 #砍两半
 
+
 def commaCut(question):
     if "," in question:
-        piece1, piece2 = question.split(',', 2)
-    if "，" in question:
-        piece1, piece2 = question.split('，', 2)
-    return piece1 , piece2
+        piece = question.split(',', 2)
+    elif "，" in question:
+        piece = question.split('，', 2)
+    return piece[0]
 #按逗号砍，砍成两段，两个字符串，建议都搜一遍
+
 
 def push(message):
     # MessageBox(0, message, "答案", MB_OK)
-    ptDict = {'title': "第" + message['id'] + "题、" + message['question'], 'content': message['answer']}
+    ptDict = {'title': "第" + message['section'] + "题、" + message['question'], 'content': message['answer']}
     m = MessageSender.MessageSender("Bark")
-    m.config({'apikey': "ZjqUwWtw3YSk8faGxvLmm6"})
+    m.config({'apikey': "gpKSL4RQYEZyTiKyz9vtEe"})
     len = int(ptDict['content'].__len__())
     m.send(ptDict)
     if len <= 10:
@@ -116,6 +119,7 @@ def push(message):
     else:
         time.sleep(5)
 #推送到ios设备
+
 
 def getDataOCR(times):
     g = OcrApis()
@@ -188,7 +192,7 @@ def findAnswer(a, times):
             str += j[h] + ". : " + i['answer']
             str += "\1"
             h += 1
-        return {'id': a['id'], 'question': a['question'], 'answer': str}
+        return {'section': a['section'],'id': a['id'], 'question': a['question'], 'answer': str, 'relativeID': a['relativeID']}
 
 
 def threadSearch(cf, st, en):
@@ -202,7 +206,7 @@ def threadSearch(cf, st, en):
             break
         print("查找中...第%d/%d题 : " % (searched, tasks) + cf.get(i, "question"))
         searched += 1
-        save(findAnswer({'id': i, 'question': cf.get(i, "question"), "type": cf.get(i, "type")}, 0))
+        save(findAnswer({'section': i, 'id': cf.get(i, "id"),'question': cf.get(i, "question"), "type": cf.get(i, "type"), 'relativeID': cf.get(i, "relativeID")}, 0))
         cf.remove_section(i)
         loop += 1
 
@@ -237,8 +241,22 @@ def textProcess(text, times):
     return targetText
 
 
-def sortByEleID(element):
-    return element['id']
+def sortByEleID(a, b):
+    a1, a2 = a['section'].split("-",2)
+    b1, b2 = b['section'].split("-",2)
+    a1 = int(a1)
+    b1 = int(b1)
+    a2 = int(a2)
+    b2 = int(b2)
+    if a1>b1:
+        return 1
+    elif a1<b1:
+        return -1
+    if a2>b2:
+        return 1
+    else:
+        return -1
+
 
 
 def startSearch():
@@ -264,13 +282,14 @@ def startSearch():
         cfg.write(f)
         f.close()
     del cfg
-    __questionList.sort(key=sortByEleID)
+    __questionList.sort(key=cmp_to_key(sortByEleID))
     cfg = configparser.ConfigParser()
     for i in __questionList:
-        cfg.add_section(i['id'])
-        cfg.set(i['id'], "relativeID", i['rID'])
-        cfg.set(i['id'], "question", i['question'])
-        cfg.set(i['id'], "answer", i['answer'])
+        cfg.add_section(i['section'])
+        cfg.set(i['section'], "ID", i['id'])
+        cfg.set(i['section'], "relativeID", i['relativeID'])
+        cfg.set(i['section'], "question", i['question'])
+        cfg.set(i['section'], "answer", i['answer'])
 
     with open("answers.ini", "w", encoding="utf-8") as f:
         cfg.write(f)
@@ -303,6 +322,8 @@ lastType = 0
 
 manualMode=True
 modeChoice=input("是否选择手动模式？y/n\n")
+
+
 def yourMode(modeChoice):
     if modeChoice=="y":
         manualMode = True
@@ -310,8 +331,9 @@ def yourMode(modeChoice):
         manualMode = False
     return manualMode
 
+
 startTime = time.time()
-if yourMode(modeChoice)==True:
+if yourMode(modeChoice):
     while 101 >= nowNum:
         if baiduAPI:
             try:
@@ -369,11 +391,13 @@ while (nowNum - numOfQuestions) != 0:
         lastType = int(detectQuestionType(q))
         print("第%d/%d题:" %(nowNum, numOfQuestions) + detectQuestion(q))
         #now = nowNum
-        now = detectQuestionID(preProcessQuestion(q)) + tp
-        cfg.add_section(str(lastType)+str(now))
-        cfg.set(str(lastType)+str(now), "relativeID", str(now))
-        cfg.set(str(lastType)+str(now), "question", detectQuestion(q))
-        cfg.set(str(lastType)+str(now), "type", str(detectQuestionType(q)))
+        rID = detectQuestionID(preProcessQuestion(q))
+        now = rID + tp
+        cfg.add_section(str(lastType+1)+"-"+str(rID))
+        cfg.set(str(lastType+1)+"-"+str(rID), "ID", str(now))
+        cfg.set(str(lastType+1)+"-"+str(rID), "relativeID", str(rID))
+        cfg.set(str(lastType+1)+"-"+str(rID), "question", detectQuestion(q))
+        cfg.set(str(lastType+1)+"-"+str(rID), "type", str(detectQuestionType(q)))
     except:
         nowNum -= 1
         continue
@@ -386,6 +410,8 @@ with open("questions.ini", "w", encoding="utf-8") as f:
 print("开始查找...")
 startSearch()
 print("正在推送...")
+j = 1
 for i in __questionList:
-    print("第%d/%d题..." % (int(i['ID']),numOfQuestions))
+    print("第%s题(%d/%d)..." % (i['section'],j,numOfQuestions))
+    j=j+1
     push(i)

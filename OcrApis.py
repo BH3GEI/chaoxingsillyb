@@ -9,7 +9,7 @@ from aip import AipOcr
 
 
 class OcrApis:
-    __list = [ "tencent"]
+    __list = ["tencent"]
 
     def get(self, arg):
         result = []
