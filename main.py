@@ -37,8 +37,6 @@ def detectQuestionType(question):
     else:
         type = 3
     return type
-
-
 # 提取题型
 
 
@@ -333,7 +331,7 @@ nowNum = 0
 tp = 0
 lastType = 0
 threadNum = 6
-uniCopy = False
+uniCopy = True
 
 manualMode = False
 modeChoice = input("是否选择手动模式？y/n\n")
@@ -376,8 +374,8 @@ if yourMode(modeChoice):
                  'type': 0}, 0)['answer'])
 
 print("开始初始化...")
-# initFlag = False
-# numOfQuestions = 4
+initFlag = False
+numOfQuestions = 21
 while initFlag:
     try:
         numOfQuestions = detectQuestionNum(getDataOCR(0))
@@ -403,8 +401,7 @@ while (nowNum - numOfQuestions) != 0:
     if not uniCopy:
         if lastString == detectQuestion(textProcess(tmp, 1)):
             continue
-        if lastType != int(detectQuestionType(textProcess(tmp, 1))):
-            tp = nowNum
+
     else:
         if lastString == textProcess(tmp, 1):
             continue
@@ -417,23 +414,22 @@ while (nowNum - numOfQuestions) != 0:
             lastType = int(detectQuestionType(q))
             rID = detectQuestionID(preProcessQuestion(q))
             q = detectQuestion(q)
+            print("第%s(%d/%d)题 : " % (str(lastType + 1) + "-" + str(rID), nowNum, numOfQuestions) + q)
         else:
             lastString = q
             lastType = -1
             rID = detectQuestionID(q)
             q = removeQuestionNum(q)
-        print("第%s(%d/%d)题 : " % (str(lastType + 1) + "-" + str(rID), nowNum, numOfQuestions) + q)
-        # now = nowNum
-        now = rID + tp
+            print("第%d/%d题 : " % (nowNum, numOfQuestions) + q)
         if uniCopy:
-            section = str(lastType + 1) + "-" + str(now)
+            section = str(lastType + 1) + "-" + str(nowNum)
         else:
             section = str(lastType + 1) + "-" + str(rID)
         cfg.add_section(section)
-        cfg.set(str(lastType + 1) + "-" + str(rID), "ID", str(now))
-        cfg.set(str(lastType + 1) + "-" + str(rID), "relativeID", str(rID))
-        cfg.set(str(lastType + 1) + "-" + str(rID), "question", q)
-        cfg.set(str(lastType + 1) + "-" + str(rID), "type", str(lastType))
+        cfg.set(section, "ID", str(nowNum))
+        cfg.set(section, "relativeID", str(rID))
+        cfg.set(section, "question", q)
+        cfg.set(section, "type", str(lastType))
     except:
         nowNum -= 1
         continue
