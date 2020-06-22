@@ -2,7 +2,6 @@ import requests
 from urllib import parse
 import json
 import Exceptions
-import threading
 
 class getter:
     __list = ["API4", "API1"]
