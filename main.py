@@ -26,11 +26,11 @@ def save(dicto):
 
 
 def detectQuestionType(question):
-    if "单选题" in question:
+    if "单选" in question:
         type = 0
-    elif "多选题" in question:
+    elif "多选" in question:
         type = 1
-    elif "判断题" in question:
+    elif "判断" in question:
         type = 2
     else:
         type = 3
@@ -67,7 +67,7 @@ def detectQuestionID(question):
 def preProcessQuestion(question):
     m1 = question.split('A', 2)  # 以A为分割
     question = m1[0]  # 取前一半
-    splitChar = "分)"
+    splitChar = "分）"
     if "分）" in question:
         splitChar = "分）"
     n1 = list(question.split(splitChar, 2))
@@ -354,7 +354,7 @@ modeChoice = input("是否选择手动模式？y/n\n")
 
 
 def yourMode(modeChoice):
-    manualMode = False
+    manualMode = True
     if modeChoice == "y":
         manualMode = True
     if modeChoice == "n":
@@ -385,9 +385,11 @@ if yourMode(modeChoice):
             startTime = time.time()
             lastString = textProcess(tmp, 1)
             nowNum += 1
-            print(findAnswer({'id': 0, 'question': textProcess(tmp, 1), 'type': 0}, 0)['answer'])
+            print(findAnswer({'section': "0-0", 'relativeID': 0, 'id': 0, 'question': textProcess(tmp, 1), 'type': 0}, 0)['answer'])
 
 print("开始初始化...")
+#initFlag = False
+#numOfQuestions = 40
 while initFlag:
     try:
         numOfQuestions = detectQuestionNum(getDataOCR(0))
