@@ -407,7 +407,7 @@ while (nowNum - numOfQuestions) != 0:
         if int(detectQuestionType(textProcess(tmp, 1))) != 3:
             if lastType != int(detectQuestionType(textProcess(tmp, 1))):
                 lastType = int(detectQuestionType(textProcess(tmp, 1)))
-
+                tmp = preProcessQuestion(textProcess(tmp, 1))
     q = textProcess(tmp, 1)
     nowNum += 1
     try:
