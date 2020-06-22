@@ -9,6 +9,8 @@ import threading
 import MessageSender
 from OcrApis import OcrApis
 from functools import cmp_to_key
+from selenium import webdriver
+from urllib import parse
 
 __header = {
     'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
@@ -67,7 +69,7 @@ def detectQuestionID(question):
 def preProcessQuestion(question):
     m1 = question.split('A', 2)  # 以A为分割
     question = m1[0]  # 取前一半
-    splitChar = "分）"
+    splitChar = "分)"
     if "分）" in question:
         splitChar = "分）"
     n1 = list(question.split(splitChar, 2))
@@ -76,7 +78,6 @@ def preProcessQuestion(question):
 
 
 # 预提取题干（带题号）
-
 
 def removeQuestionNum(question):
     if re.findall("(\d+)、", question):
@@ -99,28 +100,6 @@ def detectQuestion(question):
     return question
 
 
-# 调用上一个函数删除题号，得到纯文本题干
-
-
-def halfCut(question):
-    firstpart = question[:len(question) / 2], question[len(question) / 2:]
-    return question
-
-
-# 砍两半
-
-
-def commaCut(question):
-    if "," in question:
-        piece = question.split(',', 2)
-    elif "，" in question:
-        piece = question.split('，', 2)
-    return piece[0]
-
-
-# 按逗号砍，砍成两段，两个字符串，建议都搜一遍
-
-
 def push(message):
     # MessageBox(0, message, "答案", MB_OK)
     ptDict = {'title': "第" + message['section'] + "题、" + message['question'], 'content': message['answer']}
@@ -132,9 +111,9 @@ def push(message):
         # time.sleep(0)
         pass
     elif len <= 20:
-        time.sleep(3)
-    else:
         time.sleep(5)
+    else:
+        time.sleep(7)
 
 
 # 推送到ios设备
@@ -182,11 +161,17 @@ def getDataPaste(last):
 
 
 def getFromBaidu(question):
-    print("shit!")
+    b = webdriver.Chrome()
+    b.get("https://www.baidu.com/s?wd="+parse.quote(question))
+    js = 'window.open("https://cn.bing.com/search?q=%s");' % parse.quote(question)
+    b.execute_script(js)
+    while b.window_handles:
+        pass
+    b.quit()
 
 
 def findAnswer(a, times):
-    if times > 6:
+    if times > 4:
         raise Exceptions.NoAnswerFoundAtAll
     courseid = "206267220"
     g = getter.getter()
@@ -348,13 +333,14 @@ nowNum = 0
 tp = 0
 lastType = 0
 threadNum = 6
+uniCopy = False
 
-manualMode = True
+manualMode = False
 modeChoice = input("是否选择手动模式？y/n\n")
 
 
 def yourMode(modeChoice):
-    manualMode = True
+    manualMode = False
     if modeChoice == "y":
         manualMode = True
     if modeChoice == "n":
@@ -385,11 +371,13 @@ if yourMode(modeChoice):
             startTime = time.time()
             lastString = textProcess(tmp, 1)
             nowNum += 1
-            print(findAnswer({'section': "0-0", 'relativeID': 0, 'id': 0, 'question': textProcess(tmp, 1), 'type': 0}, 0)['answer'])
+            print(findAnswer(
+                {'section': "0-0", 'relativeID': 0, 'id': 0, 'question': removeQuestionNum(textProcess(tmp, 1)),
+                 'type': 0}, 0)['answer'])
 
 print("开始初始化...")
-#initFlag = False
-#numOfQuestions = 40
+# initFlag = False
+# numOfQuestions = 4
 while initFlag:
     try:
         numOfQuestions = detectQuestionNum(getDataOCR(0))
@@ -397,39 +385,55 @@ while initFlag:
         continue
     else:
         initFlag = False
-
+print("初始化完成！")
 print("开始获取题目内容...")
 while (nowNum - numOfQuestions) != 0:
-    if baiduAPI:
-        try:
-            tmp = getDataOCR(0)
-        except Exceptions.ClipNotIMG:
-            tmp = getDataPaste("")
-        except:
-            continue
-    else:
-        tmp = getDataPaste(tmp)
+    if uniCopy:
+        time.sleep(1)
+    try:
+        tmp = getDataOCR(0)
+        uniCopy = False
+    except Exceptions.ClipNotIMG:
+        tmp = getDataPaste("")
         if tmp == "":
             continue
-    if lastString == detectQuestion(textProcess(tmp, 1)):
+        uniCopy = True
+    except:
         continue
-    if lastType != int(detectQuestionType(textProcess(tmp, 1))):
-        tp = nowNum
+    if not uniCopy:
+        if lastString == detectQuestion(textProcess(tmp, 1)):
+            continue
+        if lastType != int(detectQuestionType(textProcess(tmp, 1))):
+            tp = nowNum
+    else:
+        if lastString == textProcess(tmp, 1):
+            continue
 
     q = textProcess(tmp, 1)
     nowNum += 1
     try:
-        lastString = detectQuestion(q)
-        lastType = int(detectQuestionType(q))
-        rID = detectQuestionID(preProcessQuestion(q))
-        print("第%s(%d/%d)题 : " % (str(lastType + 1) + "-" + str(rID), nowNum, numOfQuestions) + detectQuestion(q))
+        if not uniCopy:
+            lastString = detectQuestion(q)
+            lastType = int(detectQuestionType(q))
+            rID = detectQuestionID(preProcessQuestion(q))
+            q = detectQuestion(q)
+        else:
+            lastString = q
+            lastType = -1
+            rID = detectQuestionID(q)
+            q = removeQuestionNum(q)
+        print("第%s(%d/%d)题 : " % (str(lastType + 1) + "-" + str(rID), nowNum, numOfQuestions) + q)
         # now = nowNum
         now = rID + tp
-        cfg.add_section(str(lastType + 1) + "-" + str(rID))
+        if uniCopy:
+            section = str(lastType + 1) + "-" + str(now)
+        else:
+            section = str(lastType + 1) + "-" + str(rID)
+        cfg.add_section(section)
         cfg.set(str(lastType + 1) + "-" + str(rID), "ID", str(now))
         cfg.set(str(lastType + 1) + "-" + str(rID), "relativeID", str(rID))
-        cfg.set(str(lastType + 1) + "-" + str(rID), "question", detectQuestion(q))
-        cfg.set(str(lastType + 1) + "-" + str(rID), "type", str(detectQuestionType(q)))
+        cfg.set(str(lastType + 1) + "-" + str(rID), "question", q)
+        cfg.set(str(lastType + 1) + "-" + str(rID), "type", str(lastType))
     except:
         nowNum -= 1
         continue
