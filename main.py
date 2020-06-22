@@ -401,10 +401,12 @@ while (nowNum - numOfQuestions) != 0:
     if not uniCopy:
         if lastString == detectQuestion(textProcess(tmp, 1)):
             continue
-
     else:
         if lastString == textProcess(tmp, 1):
             continue
+        if int(detectQuestionType(textProcess(tmp, 1))) != 3:
+            if lastType != int(detectQuestionType(textProcess(tmp, 1))):
+                lastType = int(detectQuestionType(textProcess(tmp, 1)))
 
     q = textProcess(tmp, 1)
     nowNum += 1
@@ -417,14 +419,10 @@ while (nowNum - numOfQuestions) != 0:
             print("第%s(%d/%d)题 : " % (str(lastType + 1) + "-" + str(rID), nowNum, numOfQuestions) + q)
         else:
             lastString = q
-            lastType = -1
             rID = detectQuestionID(q)
             q = removeQuestionNum(q)
-            print("第%d/%d题 : " % (nowNum, numOfQuestions) + q)
-        if uniCopy:
-            section = str(lastType + 1) + "-" + str(nowNum)
-        else:
-            section = str(lastType + 1) + "-" + str(rID)
+            print("第%s(%d/%d)题 : " % (str(lastType + 1) + "-" + str(rID), nowNum, numOfQuestions) + q)
+        section = str(lastType + 1) + "-" + str(rID)
         cfg.add_section(section)
         cfg.set(section, "ID", str(nowNum))
         cfg.set(section, "relativeID", str(rID))
