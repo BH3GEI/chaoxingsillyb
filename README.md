@@ -41,8 +41,8 @@
 - [ ] 测试找到的16个api，找出能用的整合进getter.py
 - [ ] 加入一个类似搜索引擎的玩意，直接从教材里搜东西
 - [ ] 自动切换OCR与剪切板复制功能，如果用户10秒没得输入，就自动保存题库，然后开始搜题，之后切换到手动模式。
-- [ ] 蜜汁报错？？？  
-- [ ] 修复BUG：
+- [x] 蜜汁报错？？？  
+- [x] 修复BUG：
     ```python
     Exception in thread Thread-3:
     Traceback (most recent call last):
@@ -68,7 +68,7 @@
     TypeError: string indices must be integers
     ```
 - [ ] 考虑到用户使用剪切板和OCR时产生的题号、类型等区别，需要为剪切板进行定制化操作（其实就是去掉几个操作例如`detectQuestionNum`）  
-- [ ] 有时候搜不到题不是题目问题，是一些别的问题，例如：
+- [ ] 有时候搜不到题不是题目问题，是一些别的问题，考虑第一遍搜不到先重试。例如：
     ```config
     [3-2]
     id = 2

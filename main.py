@@ -35,7 +35,9 @@ def detectQuestionType(question):
     else:
         type = 3
     return type
-#提取题型
+
+
+# 提取题型
 
 
 def detectQuestionNum(question):
@@ -46,7 +48,9 @@ def detectQuestionNum(question):
     # 合并list，以防ocr空格分开数字
     num = int(numMidd)
     return num
-#提取总题数
+
+
+# 提取总题数
 
 
 def detectQuestionID(question):
@@ -55,7 +59,9 @@ def detectQuestionID(question):
     # 合并list，以防ocr空格分开数字
     num = int(numMidd)
     return num
-#提取题号
+
+
+# 提取题号
 
 
 def preProcessQuestion(question):
@@ -67,16 +73,21 @@ def preProcessQuestion(question):
     n1 = list(question.split(splitChar, 2))
     n1.pop(0)
     return n1[0]
-#预提取题干（带题号）
+
+
+# 预提取题干（带题号）
 
 
 def removeQuestionNum(question):
-    if re.findall("(\d+)、",question):
-        question = question.replace("、","",1)
-        question = question.replace(str(re.findall("(\d+)", question)[0]),"",1)
-    else: question = question.replace(str(re.findall("(\d+)", question)[0]),"",1)
+    if re.findall("(\d+)、", question):
+        question = question.replace("、", "", 1)
+        question = question.replace(str(re.findall("(\d+)", question)[0]), "", 1)
+    else:
+        question = question.replace(str(re.findall("(\d+)", question)[0]), "", 1)
     return question
-#删除题干的题号
+
+
+# 删除题干的题号
 
 
 def detectQuestion(question):
@@ -86,13 +97,17 @@ def detectQuestion(question):
         question += i
     question = removeQuestionNum(question)
     return question
-#调用上一个函数删除题号，得到纯文本题干
+
+
+# 调用上一个函数删除题号，得到纯文本题干
 
 
 def halfCut(question):
     firstpart = question[:len(question) / 2], question[len(question) / 2:]
     return question
-#砍两半
+
+
+# 砍两半
 
 
 def commaCut(question):
@@ -101,7 +116,9 @@ def commaCut(question):
     elif "，" in question:
         piece = question.split('，', 2)
     return piece[0]
-#按逗号砍，砍成两段，两个字符串，建议都搜一遍
+
+
+# 按逗号砍，砍成两段，两个字符串，建议都搜一遍
 
 
 def push(message):
@@ -118,7 +135,9 @@ def push(message):
         time.sleep(3)
     else:
         time.sleep(5)
-#推送到ios设备
+
+
+# 推送到ios设备
 
 
 def getDataOCR(times):
@@ -131,16 +150,16 @@ def getDataOCR(times):
     # print(type(img))
     img_path = 'question.png'
     img1.save(img_path)
-    #保存图片
+    # 保存图片
     with open(img_path, 'rb') as f:
         img2 = f.read()
         f.close()
     # print(type(img2))
     # 识别图片并返回结果
     try:
-        #appID = '18825234'  # '19124804'
-        #apiKey = 'eRwWUDBfne3iKuRD1csC25Ga'  # 'cCMaB793Gff1w6yE9HojaE4z'
-        #secretKey = 'e6nF9IZ7fGpt0EudikQYeUZID2DFf6GN'  # 'PMMOEcom53RHgXpwXfoHObilbf4V3oQe'
+        # appID = '18825234'  # '19124804'
+        # apiKey = 'eRwWUDBfne3iKuRD1csC25Ga'  # 'cCMaB793Gff1w6yE9HojaE4z'
+        # secretKey = 'e6nF9IZ7fGpt0EudikQYeUZID2DFf6GN'  # 'PMMOEcom53RHgXpwXfoHObilbf4V3oQe'
         result = g.get({'tencentAppID': "1302464488",
                         'tencentSecretID': "AKIDd1Rc6KFxOZT7X1wD1aNvDF5ex0nPZThg",
                         'tencentSecretKey': "rRknxrVs3zjFqDKCn9dsrZ092edOt751",
@@ -167,7 +186,7 @@ def getFromBaidu(question):
 
 
 def findAnswer(a, times):
-    if times == 4:
+    if times > 5:
         raise Exceptions.NoAnswerFoundAtAll
     courseid = "206267220"
     g = getter.getter()
@@ -177,22 +196,26 @@ def findAnswer(a, times):
     try:
         tmp = g.get({'q': a['question'], 'curs': courseid, 'type': a['type'], 'token': __token})
     except Exceptions.NoAnswerFound:
-        print("第%d遍搜索失败！" % (times+1))
+        print(a['section'] + " : " + "第%d遍搜索失败！" % (times + 1))
         try:
-            r = findAnswer(textProcess(a['question'],times+1), times + 1)
+            tmpA = a
+            tmpA['question'] = textProcess(a['question'], times + 1)
+            r = findAnswer(tmpA, times + 1)
         except Exceptions.NoAnswerFoundAtAll:
-            getFromBaidu(a['question'])
+            getFromBaidu(tmpA['question'])
         else:
+            r['question'] = a['question']
             return r
     else:
-        print("搜索成功！")
+        print(a['section'] + " : " + "搜索成功！")
         for i in tmp:
             if i['answer'] == "":
                 continue
             str += j[h] + ". : " + i['answer']
             str += "\1"
             h += 1
-        return {'section': a['section'],'id': a['id'], 'question': a['question'], 'answer': str, 'relativeID': a['relativeID']}
+        return {'section': a['section'], 'id': a['id'], 'question': a['question'], 'answer': str,
+                'relativeID': a['relativeID']}
 
 
 def threadSearch(cf, st, en):
@@ -206,7 +229,9 @@ def threadSearch(cf, st, en):
             break
         print("查找中...第%d/%d题 : " % (searched, tasks) + cf.get(i, "question"))
         searched += 1
-        save(findAnswer({'section': i, 'id': cf.get(i, "id"),'question': cf.get(i, "question"), "type": cf.get(i, "type"), 'relativeID': cf.get(i, "relativeID")}, 0))
+        save(findAnswer(
+            {'section': i, 'id': cf.get(i, "id"), 'question': cf.get(i, "question"), "type": cf.get(i, "type"),
+             'relativeID': cf.get(i, "relativeID")}, 0))
         cf.remove_section(i)
         loop += 1
 
@@ -225,6 +250,8 @@ def textProcess(text, times):
         targetText = targetText.lstrip()
         targetText = targetText.rstrip()
     elif times == 1:
+        targetText = targetText[0:int(int(targetText.__len__()) / 2)]
+    elif times == 2:
         targetText = targetText.replace("（", ")")
         targetText = targetText.replace("）", ")")
         targetText = targetText.replace("，", ",")
@@ -232,31 +259,30 @@ def textProcess(text, times):
         targetText = targetText.replace("(", "（")
         targetText = targetText.replace(")", "）")
         targetText = targetText.replace(",", "，")
-    elif times == 2:
-        targetText = targetText[0:int(targetText.__len__())/2]
-    else:
+    elif times == 3:
         pattern = r'，|,|。|;|：|:|;'
-        str1= re.split(pattern, targetText)
+        str1 = re.split(pattern, targetText)
         targetText = str1[0]
+    else:
+        targetText = targetText[0:int(int(targetText.__len__()) / 2)]
     return targetText
 
 
 def sortByEleID(a, b):
-    a1, a2 = a['section'].split("-",2)
-    b1, b2 = b['section'].split("-",2)
+    a1, a2 = a['section'].split("-", 2)
+    b1, b2 = b['section'].split("-", 2)
     a1 = int(a1)
     b1 = int(b1)
     a2 = int(a2)
     b2 = int(b2)
-    if a1>b1:
+    if a1 > b1:
         return 1
-    elif a1<b1:
+    elif a1 < b1:
         return -1
-    if a2>b2:
+    if a2 > b2:
         return 1
     else:
         return -1
-
 
 
 def startSearch():
@@ -290,11 +316,12 @@ def startSearch():
         cfg.set(i['section'], "relativeID", i['relativeID'])
         cfg.set(i['section'], "question", i['question'])
         cfg.set(i['section'], "answer", i['answer'])
-
+    foundAnswers = int(cfg.sections().__len__())
     with open("answers.ini", "w", encoding="utf-8") as f:
         cfg.write(f)
         f.close()
     del cfg
+    return foundAnswers
 
 
 def oneToN(str):
@@ -320,14 +347,15 @@ nowNum = 0
 tp = 0
 lastType = 0
 
-manualMode=True
-modeChoice=input("是否选择手动模式？y/n\n")
+manualMode = True
+modeChoice = input("是否选择手动模式？y/n\n")
 
 
 def yourMode(modeChoice):
-    if modeChoice=="y":
+    manualMode = False
+    if modeChoice == "y":
         manualMode = True
-    if modeChoice=="n":
+    if modeChoice == "n":
         manualMode = False
     return manualMode
 
@@ -353,9 +381,9 @@ if yourMode(modeChoice):
             continue
         else:
             startTime = time.time()
-            lastString = textProcess(tmp,0)
-            nowNum+=1
-            print(findAnswer({'id': 0,'question': textProcess(tmp,0), 'type':0},0)['answer'])
+            lastString = textProcess(tmp, 0)
+            nowNum += 1
+            print(findAnswer({'id': 0, 'question': textProcess(tmp, 0), 'type': 0}, 0)['answer'])
 
 print("开始初始化...")
 while initFlag:
@@ -389,15 +417,15 @@ while (nowNum - numOfQuestions) != 0:
     try:
         lastString = detectQuestion(q)
         lastType = int(detectQuestionType(q))
-        print("第%d/%d题:" %(nowNum, numOfQuestions) + detectQuestion(q))
-        #now = nowNum
+        print("第%d/%d题 : " % (nowNum, numOfQuestions) + detectQuestion(q))
+        # now = nowNum
         rID = detectQuestionID(preProcessQuestion(q))
         now = rID + tp
-        cfg.add_section(str(lastType+1)+"-"+str(rID))
-        cfg.set(str(lastType+1)+"-"+str(rID), "ID", str(now))
-        cfg.set(str(lastType+1)+"-"+str(rID), "relativeID", str(rID))
-        cfg.set(str(lastType+1)+"-"+str(rID), "question", detectQuestion(q))
-        cfg.set(str(lastType+1)+"-"+str(rID), "type", str(detectQuestionType(q)))
+        cfg.add_section(str(lastType + 1) + "-" + str(rID))
+        cfg.set(str(lastType + 1) + "-" + str(rID), "ID", str(now))
+        cfg.set(str(lastType + 1) + "-" + str(rID), "relativeID", str(rID))
+        cfg.set(str(lastType + 1) + "-" + str(rID), "question", detectQuestion(q))
+        cfg.set(str(lastType + 1) + "-" + str(rID), "type", str(detectQuestionType(q)))
     except:
         nowNum -= 1
         continue
@@ -408,10 +436,10 @@ with open("questions.ini", "w", encoding="utf-8") as f:
     del cfg
 
 print("开始查找...")
-startSearch()
+fdA = startSearch()
 print("正在推送...")
 j = 1
 for i in __questionList:
-    print("第%s题(%d/%d)..." % (i['section'],j,numOfQuestions))
-    j=j+1
+    print("第%s题(%d/%d/%d)..." % (i['section'], j, fdA, numOfQuestions))
+    j = j + 1
     push(i)
