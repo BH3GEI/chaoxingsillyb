@@ -11,6 +11,7 @@ from OcrApis import OcrApis
 from functools import cmp_to_key
 from selenium import webdriver
 from urllib import parse
+from pykeyboard import PyKeyboard
 
 __header = {
     'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
@@ -21,6 +22,16 @@ __token = "3d0da4a49407f37445a667768ff8f4ab"
 __questionList = []
 searched = 1
 tasks = 0
+
+
+def autoPaste(question):
+    pyperclip.copy(question)
+    k = PyKeyboard()
+    k.press_key(k.control_key)
+    k.tap_key('v')
+    k.release_key(k.control_key)
+    k.tap_key(k.enter_key)
+    del k
 
 
 def save(dicto):
@@ -187,7 +198,10 @@ def findAnswer(a, times):
             tmpA['question'] = textProcess(a['question'], times + 1)
             r = findAnswer(tmpA, times + 1)
         except Exceptions.NoAnswerFoundAtAll:
-            getFromBaidu(tmpA['question'])
+            # getFromBaidu(tmpA['question'])
+            autoPaste(tmpA['question'])
+            return {'section': a['section'], 'id': a['id'], 'question': a['question'], 'answer': "",
+                'relativeID': a['relativeID']}
         else:
             r['question'] = a['question']
             return r
@@ -214,10 +228,12 @@ def threadSearch(cf, st, en):
             break
         print("查找中...第%s(%d/%d)题 : " % (i, searched, tasks) + cf.get(i, "question"))
         searched += 1
-        save(findAnswer(
+        a = findAnswer(
             {'section': i, 'id': cf.get(i, "id"), 'question': cf.get(i, "question"), "type": cf.get(i, "type"),
-             'relativeID': cf.get(i, "relativeID")}, 0))
-        cf.remove_section(i)
+             'relativeID': cf.get(i, "relativeID")}, 0)
+        if a['answer'] != "":
+            cf.remove_section(i)
+            save(a)
         loop += 1
 
 
@@ -275,7 +291,6 @@ def startSearch(threadNum=6):
     global __questionList, tasks
     cfg = configparser.ConfigParser()
     cfg.read("questions.ini", encoding="utf-8")
-    searched = 1
     tasks = int(cfg.sections().__len__())
 
     t = []
@@ -329,7 +344,7 @@ initFlag = True
 numOfQuestions = 0
 nowNum = 0
 tp = 0
-lastType = 0
+lastType = -1
 threadNum = 6
 uniCopy = True
 
@@ -375,7 +390,7 @@ if yourMode(modeChoice):
 
 print("开始初始化...")
 initFlag = False
-numOfQuestions = 21
+numOfQuestions = 3
 while initFlag:
     try:
         numOfQuestions = detectQuestionNum(getDataOCR(0))
@@ -408,6 +423,8 @@ while (nowNum - numOfQuestions) != 0:
             if lastType != int(detectQuestionType(textProcess(tmp, 1))):
                 lastType = int(detectQuestionType(textProcess(tmp, 1)))
                 tmp = preProcessQuestion(textProcess(tmp, 1))
+                pyperclip.copy(tmp)
+                continue
     q = textProcess(tmp, 1)
     nowNum += 1
     try:
