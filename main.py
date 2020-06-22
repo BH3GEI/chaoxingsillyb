@@ -186,7 +186,7 @@ def getFromBaidu(question):
 
 
 def findAnswer(a, times):
-    if times > 5:
+    if times > 6:
         raise Exceptions.NoAnswerFoundAtAll
     courseid = "206267220"
     g = getter.getter()
@@ -196,9 +196,11 @@ def findAnswer(a, times):
     try:
         tmp = g.get({'q': a['question'], 'curs': courseid, 'type': a['type'], 'token': __token})
     except Exceptions.NoAnswerFound:
-        print(a['section'] + " : " + "第%d遍搜索失败！" % (times + 1))
+        print(a['section'] + " : " + "第%d遍搜索失败！重试..." % (times + 1))
+        if times == 0:
+            return findAnswer(a, times + 1)
         try:
-            tmpA = a
+            tmpA = a.copy()
             tmpA['question'] = textProcess(a['question'], times + 1)
             r = findAnswer(tmpA, times + 1)
         except Exceptions.NoAnswerFoundAtAll:
@@ -207,7 +209,7 @@ def findAnswer(a, times):
             r['question'] = a['question']
             return r
     else:
-        print(a['section'] + " : " + "搜索成功！")
+        print(a['section'] + " : " + ("第%d遍搜索成功！" % (times + 1)))
         for i in tmp:
             if i['answer'] == "":
                 continue
@@ -227,7 +229,7 @@ def threadSearch(cf, st, en):
             continue
         if loop >= en:
             break
-        print("查找中...第%d/%d题 : " % (searched, tasks) + cf.get(i, "question"))
+        print("查找中...第%s(%d/%d)题 : " % (i, searched, tasks) + cf.get(i, "question"))
         searched += 1
         save(findAnswer(
             {'section': i, 'id': cf.get(i, "id"), 'question': cf.get(i, "question"), "type": cf.get(i, "type"),
@@ -238,7 +240,7 @@ def threadSearch(cf, st, en):
 
 def textProcess(text, times):
     targetText = text
-    if times == 0:
+    if times == 1:
         targetText = targetText.strip()
         targetText = targetText.replace(" ", '')
         targetText = targetText.replace("\n", '')
@@ -249,9 +251,9 @@ def textProcess(text, times):
         targetText = targetText.replace("\u3000", '')
         targetText = targetText.lstrip()
         targetText = targetText.rstrip()
-    elif times == 1:
-        targetText = targetText[0:int(int(targetText.__len__()) / 2)]
     elif times == 2:
+        targetText = targetText[0:int(int(targetText.__len__()) / 2)]
+    elif times == 3:
         targetText = targetText.replace("（", ")")
         targetText = targetText.replace("）", ")")
         targetText = targetText.replace("，", ",")
@@ -259,7 +261,7 @@ def textProcess(text, times):
         targetText = targetText.replace("(", "（")
         targetText = targetText.replace(")", "）")
         targetText = targetText.replace(",", "，")
-    elif times == 3:
+    elif times == 4:
         pattern = r'，|,|。|;|：|:|;'
         str1 = re.split(pattern, targetText)
         targetText = str1[0]
@@ -285,12 +287,11 @@ def sortByEleID(a, b):
         return -1
 
 
-def startSearch():
+def startSearch(threadNum=6):
     # 初始化题目文件
     global __questionList, tasks
     cfg = configparser.ConfigParser()
     cfg.read("questions.ini", encoding="utf-8")
-    threadNum = 6
     searched = 1
     tasks = int(cfg.sections().__len__())
 
@@ -346,6 +347,7 @@ numOfQuestions = 0
 nowNum = 0
 tp = 0
 lastType = 0
+threadNum = 6
 
 manualMode = True
 modeChoice = input("是否选择手动模式？y/n\n")
@@ -374,16 +376,16 @@ if yourMode(modeChoice):
             tmp = getDataPaste(tmp)
             if tmp == "":
                 continue
-        if lastString == textProcess(tmp, 0):
+        if lastString == textProcess(tmp, 1):
             endTime = time.time()
             if endTime - startTime >= 3000:
                 quit()
             continue
         else:
             startTime = time.time()
-            lastString = textProcess(tmp, 0)
+            lastString = textProcess(tmp, 1)
             nowNum += 1
-            print(findAnswer({'id': 0, 'question': textProcess(tmp, 0), 'type': 0}, 0)['answer'])
+            print(findAnswer({'id': 0, 'question': textProcess(tmp, 1), 'type': 0}, 0)['answer'])
 
 print("开始初始化...")
 while initFlag:
@@ -407,19 +409,19 @@ while (nowNum - numOfQuestions) != 0:
         tmp = getDataPaste(tmp)
         if tmp == "":
             continue
-    if lastString == detectQuestion(textProcess(tmp, 0)):
+    if lastString == detectQuestion(textProcess(tmp, 1)):
         continue
-    if lastType != int(detectQuestionType(textProcess(tmp, 0))):
+    if lastType != int(detectQuestionType(textProcess(tmp, 1))):
         tp = nowNum
 
-    q = textProcess(tmp, 0)
+    q = textProcess(tmp, 1)
     nowNum += 1
     try:
         lastString = detectQuestion(q)
         lastType = int(detectQuestionType(q))
-        print("第%d/%d题 : " % (nowNum, numOfQuestions) + detectQuestion(q))
-        # now = nowNum
         rID = detectQuestionID(preProcessQuestion(q))
+        print("第%s(%d/%d)题 : " % (str(lastType + 1) + "-" + str(rID), nowNum, numOfQuestions) + detectQuestion(q))
+        # now = nowNum
         now = rID + tp
         cfg.add_section(str(lastType + 1) + "-" + str(rID))
         cfg.set(str(lastType + 1) + "-" + str(rID), "ID", str(now))
@@ -435,8 +437,8 @@ with open("questions.ini", "w", encoding="utf-8") as f:
     f.close()
     del cfg
 
-print("开始查找...")
-fdA = startSearch()
+print("开始查找(%d线程)..." % threadNum)
+fdA = startSearch(threadNum)
 print("正在推送...")
 j = 1
 for i in __questionList:
