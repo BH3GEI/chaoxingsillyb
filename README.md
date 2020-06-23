@@ -1,24 +1,7 @@
 # chaoxingsillyb
 满分的故事
 ###
-[common]
-token = HF_TR_2016@
-server_addr = sh.evyde.xyz 
-server_port = 7777
 
-[plugin_http_proxy]
-type = tcp
-remote_port = 6016
-plugin = http_proxy
-plugin_http_user = 6016
-plugin_http_passwd = 3.141592
-
-[plugin_socks5]
-type = tcp
-remote_port = 6017
-plugin = socks5
-plugin_user = 6016
-plugin_passwd = 3.141592
 
 ###
 

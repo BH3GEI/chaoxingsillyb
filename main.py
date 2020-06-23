@@ -11,6 +11,7 @@ from OcrApis import OcrApis
 from functools import cmp_to_key
 from selenium import webdriver
 from urllib import parse
+import os
 from pykeyboard import PyKeyboard
 
 __header = {
@@ -199,8 +200,8 @@ def findAnswer(a, times):
             tmpA['question'] = textProcess(a['question'], times + 1)
             r = findAnswer(tmpA, times + 1)
         except Exceptions.NoAnswerFoundAtAll:
-            # getFromBaidu(tmpA['question'])
-            autoPaste(tmpA['question'])
+            # getFromBaidu(a['question'])
+            autoPaste(a['question'])
             return {'section': a['section'], 'id': a['id'], 'question': a['question'], 'answer': "",
                 'relativeID': a['relativeID']}
         else:
@@ -287,11 +288,11 @@ def sortByEleID(a, b):
         return -1
 
 
-def startSearch(threadNum=6):
+def startSearch(threadNum=6, file="questions.ini", write=True):
     # 初始化题目文件
     global __questionList, tasks
     cfg = configparser.ConfigParser()
-    cfg.read("questions.ini", encoding="utf-8")
+    cfg.read(file, encoding="utf-8")
     tasks = int(cfg.sections().__len__())
 
     t = []
@@ -304,9 +305,10 @@ def startSearch(threadNum=6):
     for i in t:
         i.join()
 
-    with open("questions.ini", "w+") as f:
-        cfg.write(f)
-        f.close()
+    if write:
+        with open(file, "w+") as f:
+            cfg.write(f)
+            f.close()
     del cfg
     __questionList.sort(key=cmp_to_key(sortByEleID))
     cfg = configparser.ConfigParser()
@@ -332,6 +334,15 @@ def nToOne(str):
     return str.replace("\n", "\1", 999)
 
 
+def yourMode(modeChoice):
+    manualMode = False
+    if modeChoice == "y":
+        manualMode = True
+    if modeChoice == "n":
+        manualMode = False
+    return manualMode
+
+
 lastString = ""
 
 # 初始化AipOcr
@@ -348,20 +359,17 @@ tp = 0
 lastType = -1
 threadNum = 6
 uniCopy = True
+searchingMode = "n"
 
 manualMode = False
-modeChoice = input("是否选择手动模式？y/n\n")
+searchingMode = str(input("搜题模式？y/N"))
+
+if yourMode(searchingMode):
+    startSearch(threadNum, "questions1.ini", False)
+    quit()
 
 
-def yourMode(modeChoice):
-    manualMode = False
-    if modeChoice == "y":
-        manualMode = True
-    if modeChoice == "n":
-        manualMode = False
-    return manualMode
-
-
+modeChoice = str(input("是否选择手动模式？y/n"))
 startTime = time.time()
 if yourMode(modeChoice):
     while 101 >= nowNum:
@@ -454,7 +462,7 @@ with open("questions.ini", "w", encoding="utf-8") as f:
     cfg.write(f)
     f.close()
     del cfg
-
+os.popen("copy /y questions.ini questions1.ini") # Linux把copy改成cp
 print("开始查找(%d线程)..." % threadNum)
 fdA = startSearch(threadNum)
 print("正在推送...")
