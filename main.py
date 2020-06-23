@@ -181,7 +181,9 @@ def getFromBaidu(question):
 
 
 
-def findAnswer(a, times):
+def findAnswer(a, times, source=None):
+    if source is None:
+        source = a.copy()
     if times > 4:
         raise Exceptions.NoAnswerFoundAtAll
     courseid = "206267220"
@@ -194,14 +196,14 @@ def findAnswer(a, times):
     except Exceptions.NoAnswerFound:
         print(a['section'] + " : " + "第%d遍搜索失败！重试..." % (times + 1))
         if times == 0:
-            return findAnswer(a, times + 1)
+            return findAnswer(a, times + 1, source)
         try:
             tmpA = a.copy()
-            tmpA['question'] = textProcess(a['question'], times + 1)
-            r = findAnswer(tmpA, times + 1)
+            tmpA['question'] = textProcess(tmpA['question'], times + 1)
+            r = findAnswer(tmpA, times + 1, source)
         except Exceptions.NoAnswerFoundAtAll:
-            # getFromBaidu(a['question'])
-            autoPaste(a['question'])
+            # getFromBaidu(source['question'])
+            autoPaste(source['question'])
             return {'section': a['section'], 'id': a['id'], 'question': a['question'], 'answer': "",
                 'relativeID': a['relativeID']}
         else:
@@ -230,9 +232,9 @@ def threadSearch(cf, st, en):
             break
         print("查找中...第%s(%d/%d)题 : " % (i, searched, tasks) + cf.get(i, "question"))
         searched += 1
-        a = findAnswer(
-            {'section': i, 'id': cf.get(i, "id"), 'question': cf.get(i, "question"), "type": cf.get(i, "type"),
-             'relativeID': cf.get(i, "relativeID")}, 0)
+        dic = {'section': i, 'id': cf.get(i, "id"), 'question': cf.get(i, "question"), "type": cf.get(i, "type"),
+             'relativeID': cf.get(i, "relativeID")}
+        a = findAnswer(dic, 0, dic)
         if a['answer'] != "":
             cf.remove_section(i)
             save(a)
@@ -399,7 +401,7 @@ if yourMode(modeChoice):
 
 print("开始初始化...")
 initFlag = False
-numOfQuestions = 3
+numOfQuestions = 2
 while initFlag:
     try:
         numOfQuestions = detectQuestionNum(getDataOCR(0))
