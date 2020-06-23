@@ -179,6 +179,7 @@ def getFromBaidu(question):
     b.quit()
 
 
+
 def findAnswer(a, times):
     if times > 4:
         raise Exceptions.NoAnswerFoundAtAll
