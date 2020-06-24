@@ -49,8 +49,9 @@ def detectQuestionType(question):
     else:
         type = 3
     return type
-# 提取题型
 
+
+# 提取题型
 
 def detectQuestionNum(question):
     p1, p2 = question.split('/', 2)  # 按照分数线/分隔，因为全屏仅此一个
@@ -136,19 +137,12 @@ def getDataOCR(times):
     img1 = ImageGrab.grabclipboard()
     if img1 is None:
         raise Exceptions.ClipNotIMG("剪切板不是图片")
-    # print(type(img))
     img_path = 'question.png'
     img1.save(img_path)
-    # 保存图片
     with open(img_path, 'rb') as f:
         img2 = f.read()
         f.close()
-    # print(type(img2))
-    # 识别图片并返回结果
     try:
-        # appID = '18825234'  # '19124804'
-        # apiKey = 'eRwWUDBfne3iKuRD1csC25Ga'  # 'cCMaB793Gff1w6yE9HojaE4z'
-        # secretKey = 'e6nF9IZ7fGpt0EudikQYeUZID2DFf6GN'  # 'PMMOEcom53RHgXpwXfoHObilbf4V3oQe'
         result = g.get({'tencentAppID': "1302464488",
                         'tencentSecretID': "AKIDd1Rc6KFxOZT7X1wD1aNvDF5ex0nPZThg",
                         'tencentSecretKey': "rRknxrVs3zjFqDKCn9dsrZ092edOt751",
@@ -172,13 +166,12 @@ def getDataPaste(last):
 
 def getFromBaidu(question):
     b = webdriver.Chrome()
-    b.get("https://www.baidu.com/s?wd="+parse.quote(question))
+    b.get("https://www.baidu.com/s?wd=" + parse.quote(question))
     js = 'window.open("https://cn.bing.com/search?q=%s");' % parse.quote(question)
     b.execute_script(js)
     while b.window_handles:
         pass
     b.quit()
-
 
 
 def findAnswer(a, times, source=None):
@@ -189,7 +182,7 @@ def findAnswer(a, times, source=None):
     courseid = "206267220"
     g = getter.getter()
     str = ""
-    j = ['I', 'II', 'III', 'IV']
+    j = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
     h = 0
     try:
         tmp = g.get({'q': a['question'], 'curs': courseid, 'type': a['type'], 'token': __token})
@@ -205,7 +198,7 @@ def findAnswer(a, times, source=None):
             # getFromBaidu(source['question'])
             autoPaste(source['question'])
             return {'section': a['section'], 'id': a['id'], 'question': a['question'], 'answer': "",
-                'relativeID': a['relativeID']}
+                    'relativeID': a['relativeID']}
         else:
             r['question'] = a['question']
             return r
@@ -233,7 +226,7 @@ def threadSearch(cf, st, en):
         print("查找中...第%s(%d/%d)题 : " % (i, searched, tasks) + cf.get(i, "question"))
         searched += 1
         dic = {'section': i, 'id': cf.get(i, "id"), 'question': cf.get(i, "question"), "type": cf.get(i, "type"),
-             'relativeID': cf.get(i, "relativeID")}
+               'relativeID': cf.get(i, "relativeID")}
         a = findAnswer(dic, 0, dic)
         if a['answer'] != "":
             cf.remove_section(i)
@@ -294,7 +287,7 @@ def startSearch(threadNum=6, file="questions.ini", write=True):
     # 初始化题目文件
     global __questionList, tasks
     cfg = configparser.ConfigParser()
-    cfg.read(file, encoding="utf-8")
+    cfg.read(file, encoding="gbk")
     tasks = int(cfg.sections().__len__())
 
     t = []
@@ -360,8 +353,7 @@ nowNum = 0
 tp = 0
 lastType = -1
 threadNum = 6
-uniCopy = True
-searchingMode = "n"
+uniCopy = False
 
 manualMode = False
 searchingMode = str(input("搜题模式？y/N"))
@@ -370,8 +362,7 @@ if yourMode(searchingMode):
     startSearch(threadNum, "questions1.ini", False)
     quit()
 
-
-modeChoice = str(input("是否选择手动模式？y/n"))
+modeChoice = str(input("是否选择紧急模式？y/N"))
 startTime = time.time()
 if yourMode(modeChoice):
     while 101 >= nowNum:
@@ -400,8 +391,8 @@ if yourMode(modeChoice):
                  'type': 0}, 0)['answer'])
 
 print("开始初始化...")
-initFlag = False
-numOfQuestions = 2
+# initFlag = False
+# numOfQuestions = 2
 while initFlag:
     try:
         numOfQuestions = detectQuestionNum(getDataOCR(0))
@@ -464,12 +455,12 @@ with open("questions.ini", "w", encoding="utf-8") as f:
     cfg.write(f)
     f.close()
     del cfg
-os.popen("copy /y questions.ini questions1.ini") # Linux把copy改成cp
+os.popen("copy /y questions.ini questions1.ini")  # Linux把copy改成cp
 print("开始查找(%d线程)..." % threadNum)
 fdA = startSearch(threadNum)
 print("正在推送...")
 j = 1
 for i in __questionList:
-    print("第%s题(%d/%d/%d)..." % (i['section'], j, fdA, numOfQuestions))
+    print("第%s题(%d/%d/%d) : %s" % (i['section'], j, fdA, numOfQuestions, i['answer']))
     j = j + 1
     push(i)
