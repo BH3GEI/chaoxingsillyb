@@ -365,7 +365,7 @@ if yourMode(searchingMode):
 modeChoice = str(input("是否选择紧急模式？y/N"))
 startTime = time.time()
 if yourMode(modeChoice):
-    while 101 >= nowNum:
+    while 51 >= nowNum:
         if baiduAPI:
             try:
                 tmp = getDataOCR(0)
@@ -387,7 +387,7 @@ if yourMode(modeChoice):
             lastString = textProcess(tmp, 1)
             nowNum += 1
             print(findAnswer(
-                {'section': "0-0", 'relativeID': 0, 'id': 0, 'question': removeQuestionNum(textProcess(tmp, 1)),
+                {'section': "0-0", 'relativeID': 0, 'id': 0, 'question': textProcess(tmp, 1),
                  'type': 0}, 0)['answer'])
 
 print("开始初始化...")

@@ -5,7 +5,7 @@ import Exceptions
 
 
 class getter:
-    __list = ["__API4"]
+    __list = ["API4", "API1", "API3", "API5", "xueXiaoYiAPI"]
     __result = []
 
     def get(self, arg):
@@ -29,7 +29,7 @@ class getter:
     def __oneToSharp(self, str):
         return str.replace("\1", "#", 999)
 
-    def __API1(self, a):
+    def API1(self, a):
         url = "http://qs.nnarea.cn/chaoxing_war/topicServlet?action=query&q="
         r = {'answer': "", 'status': False}
         tmp = json.loads(requests.post(url + parse.quote(a['q']),
@@ -40,17 +40,7 @@ class getter:
         # type类型已知，无需循环4遍
         return r
 
-    def __API2(self, a):
-        url = "http://cx.icodef.com/wyn-nb"
-        r = {'answer': "", 'status': False}
-        for i in range(0, 4):
-            tmp = requests.post(url, "question=" + parse.quote(a['q']) + '&type=' + str(i)).text
-            if tmp != "题目不能为nil":
-                r['status'] = True
-                r['answer'] += tmp + "|"
-        return r
-
-    def __API4(self, a):
+    def API4(self, a):
         url = "https://api3.4n0a.cn/jsapi.php?"
         tmp = json.loads(requests.get(url + "q=" + parse.quote(a['q']) + "&token=" + a['token']).text)
         r = {'answer': "", 'status': False}
@@ -59,7 +49,7 @@ class getter:
             r['answer'] = self.__oneToSharp(tmp['da'])
         return r
 
-    def __xueXiaoYiAPI(self, a):
+    def xueXiaoYiAPI(self, a):
         url = "http://api2.4n0a.cn:81/zdtool.php?question="
         tmp = json.loads(requests.get(url + parse.quote(a['q'])).text)
         r = {'answer': "", 'status': False}
@@ -68,7 +58,7 @@ class getter:
             r['answer'] = self.__oneToSharp(tmp['data'])
         return r
 
-    def __API3(self, a):
+    def API3(self, a):
         url = "https://c.lewq.cn/ct/xxy/?n=2&tm="
         tmp = json.loads(requests.get(url + parse.quote(a['q'])).text)[0]
         r = {'answer': "", 'status': False}
@@ -77,7 +67,7 @@ class getter:
             r['answer'] = self.__oneToSharp(tmp['a'])
         return r
 
-    def __API5(self, a):
+    def API5(self, a):
         url = "http://47.112.247.80/wkapi.php?q="
         tmp = json.loads(requests.get(url + parse.quote(a['q'])).text)
         r = {'answer': "", 'status': False}
