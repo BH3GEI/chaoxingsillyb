@@ -13,7 +13,7 @@
 - 读取`questions.ini`，并且根据`threadNum`创建对应数量线程搜索题目，以字典形式保存在全局变量`__questionList`中，在全部搜索完之后保存到`answers.ini`中，格式同上。并且，每道题如果搜索不到，还会尝试变化形式重新搜索（总共4次），搜索不到会粘贴并按`回车`键（默认场景是鼠标已经定位在某微信搜题公众号的聊天框中）；如果搜索到，则将此题从`questions.ini`中移除。
 - 搜索完成后，使用`push(message)`方法推送给用户，使用`MessageSender`中的方法，有Bark、ServerChan、SMTP、控制台、文件等方法。其中，`message`为字典，格式为：`{'no': 题号, 'question': 题目题干, 'answer': 题目答案}`（可直接使用`__questionList`或`answers.ini`中的字典）
 - 需要注意，在`__questionList`或`answers.ini`中，`\n`作为`\1`保存，使用时需替换。
-- `answer.ini`内容为：
+- `answers.ini`内容为：
 
         [1-10] # 绝对题号（大题-小题）
         id = 10 # 搜索顺序号
