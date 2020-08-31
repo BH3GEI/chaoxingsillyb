@@ -14,6 +14,7 @@
 - 搜索完成后，使用`push(message)`方法推送给用户，使用`MessageSender`中的方法，有Bark、ServerChan、SMTP、控制台、文件等方法。其中，`message`为字典，格式为：`{'no': 题号, 'question': 题目题干, 'answer': 题目答案}`（可直接使用`__questionList`或`answers.ini`中的字典）
 - 需要注意，在`__questionList`或`answers.ini`中，`\n`作为`\1`保存，使用时需替换。
 - `answer.ini`内容为：
+
         [1-10] # 绝对题号（大题-小题）
         id = 10 # 搜索顺序号
         relativeid = 10 # 相对题号（小题号）
