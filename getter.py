@@ -5,7 +5,7 @@ import Exceptions
 
 
 class getter:
-    __list = ["API4", "API1", "API3", "API5", "xueXiaoYiAPI"]
+    __list = ["API6"]
     __result = []
 
     def get(self, arg):
@@ -74,4 +74,14 @@ class getter:
         if tmp['answer'] != "暂未查询到答案！":
             r['status'] = True
             r['answer'] = self.__oneToSharp(tmp['answer'])
+        return r
+
+    def API6(self, a):
+        url = "https://api.gochati.cn/jsapi.php?"
+        tmp = json.loads(requests.get(url + "q=" + parse.quote(a['q']) + "&token=" + a['token']).text)
+        r = {'answer': "", 'status': False, "tm": "没有这道题的答案。"}
+        if tmp['tm'] != "未查到该题，已收录到后台，过几天再来试试吧~":
+            r['status'] = True
+            r['answer'] = self.__oneToSharp(tmp['da'])
+            r['tm'] = self.__oneToSharp(tmp['tm'])
         return r

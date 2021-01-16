@@ -19,7 +19,7 @@ __header = {
     'Authorization': ""
 }
 
-__token = "3d0da4a49407f37445a667768ff8f4ab"
+__token = "test123"
 __questionList = []
 searched = 1
 tasks = 0
@@ -67,7 +67,7 @@ def detectQuestionNum(question):
 
 
 def detectQuestionID(question):
-    listOrig = re.findall("(\d+)、", question)  # 挑出数字
+    listOrig = re.findall("(\d+).", question)  # 挑出数字
     numMidd = listOrig[0]
     # 合并list，以防ocr空格分开数字
     num = int(numMidd)
@@ -91,8 +91,8 @@ def preProcessQuestion(question):
 # 预提取题干（带题号）
 
 def removeQuestionNum(question):
-    if re.findall("(\d+)、", question):
-        question = question.replace("、", "", 1)
+    if re.findall("(\d+).", question):
+        question = question.replace(".", "", 1)
         question = question.replace(str(re.findall("(\d+)", question)[0]), "", 1)
     else:
         question = question.replace(str(re.findall("(\d+)", question)[0]), "", 1)
